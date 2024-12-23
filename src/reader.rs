@@ -10,6 +10,7 @@ pub struct Mp4Reader<R> {
     reader: R,
     pub ftyp: FtypBox,
     pub moov: MoovBox,
+    pub sidx: Option<SidxBox>,
     pub moofs: Vec<MoofBox>,
     pub emsgs: Vec<EmsgBox>,
 
@@ -23,6 +24,7 @@ impl<R: Read + Seek> Mp4Reader<R> {
 
         let mut ftyp = None;
         let mut moov = None;
+        let mut sidx = None;
         let mut moofs = Vec::new();
         let mut moof_offsets = Vec::new();
         let mut emsgs = Vec::new();
@@ -56,6 +58,9 @@ impl<R: Read + Seek> Mp4Reader<R> {
                 }
                 BoxType::MoovBox => {
                     moov = Some(MoovBox::read_box(&mut reader, s)?);
+                }
+                BoxType::SidxBox => {
+                    sidx = Some(SidxBox::read_box(&mut reader, s)?);
                 }
                 BoxType::MoofBox => {
                     let moof_offset = reader.stream_position()? - 8;
@@ -122,6 +127,7 @@ impl<R: Read + Seek> Mp4Reader<R> {
             reader,
             ftyp: ftyp.unwrap(),
             moov: moov.unwrap(),
+            sidx: sidx,
             moofs,
             emsgs,
             size,
@@ -208,6 +214,7 @@ impl<R: Read + Seek> Mp4Reader<R> {
             reader,
             ftyp: self.ftyp.clone(),
             moov: self.moov.clone(),
+            sidx: self.sidx.clone(),
             moofs,
             emsgs: Vec::new(),
             tracks,
