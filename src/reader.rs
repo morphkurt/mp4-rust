@@ -127,7 +127,7 @@ impl<R: Read + Seek> Mp4Reader<R> {
             reader,
             ftyp: ftyp.unwrap(),
             moov: moov.unwrap(),
-            sidx: sidx,
+            sidx, 
             moofs,
             emsgs,
             size,
@@ -213,7 +213,7 @@ impl<R: Read + Seek> Mp4Reader<R> {
         Ok(Mp4Reader {
             reader,
             ftyp: self.ftyp.clone(),
-            moov: self.moov.clone(),
+            moov: self.moov.clone(),            
             sidx: self.sidx.clone(),
             moofs,
             emsgs: Vec::new(),
