@@ -143,6 +143,8 @@ impl Mp4Track {
             Ok(FourCC::from(BoxType::Vp09Box))
         } else if self.trak.mdia.minf.stbl.stsd.mp4a.is_some() {
             Ok(FourCC::from(BoxType::Mp4aBox))
+        } else if self.trak.mdia.minf.stbl.stsd.opus.is_some() {
+            Ok(FourCC::from(BoxType::OpusBox))
         } else if self.trak.mdia.minf.stbl.stsd.tx3g.is_some() {
             Ok(FourCC::from(BoxType::Tx3gBox))
         } else {

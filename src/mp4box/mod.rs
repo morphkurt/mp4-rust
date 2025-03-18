@@ -85,6 +85,7 @@ pub(crate) mod moov;
 pub(crate) mod mp4a;
 pub(crate) mod mvex;
 pub(crate) mod mvhd;
+pub(crate) mod opus;
 pub(crate) mod sidx;
 pub(crate) mod smhd;
 pub(crate) mod stbl;
@@ -130,6 +131,7 @@ pub use moov::MoovBox;
 pub use mp4a::Mp4aBox;
 pub use mvex::MvexBox;
 pub use mvhd::MvhdBox;
+pub use opus::OpusBox;
 pub use sidx::SidxBox;
 pub use smhd::SmhdBox;
 pub use stbl::StblBox;
@@ -185,6 +187,7 @@ macro_rules! boxtype {
 }
 
 boxtype! {
+    DopsBox => 0x644f7073,
     FtypBox => 0x66747970,
     MvhdBox => 0x6d766864,
     MfhdBox => 0x6d666864,
@@ -193,6 +196,7 @@ boxtype! {
     MoovBox => 0x6d6f6f76,
     MvexBox => 0x6d766578,
     MehdBox => 0x6d656864,
+    OpusBox => 0x4f707573,
     TrexBox => 0x74726578,
     EmsgBox => 0x656d7367,
     MoofBox => 0x6d6f6f66,
