@@ -154,6 +154,8 @@ impl<W: Write> WriteBox<&mut W> for StsdBox {
             mp4a.write_box(writer)?;
         } else if let Some(ref tx3g) = self.tx3g {
             tx3g.write_box(writer)?;
+        }else if let Some(ref opus) = self.opus {
+            opus.write_box(writer)?;
         }
 
         Ok(size)
