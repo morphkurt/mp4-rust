@@ -714,8 +714,8 @@ impl Mp4TrackWriter {
                 let tx3g = Tx3gBox::default();
                 trak.mdia.minf.stbl.stsd.tx3g = Some(tx3g);
             }
-            MediaConfig::OpusConfig(ref _opus_config) => {
-                let opus = OpusBox::default();
+            MediaConfig::OpusConfig(ref opus_config) => {
+                let opus = OpusBox::new(opus_config);
                 trak.mdia.minf.stbl.stsd.opus = Some(opus);
             }
         }

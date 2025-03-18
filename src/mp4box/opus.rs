@@ -28,6 +28,17 @@ impl Default for OpusBox {
 }
 
 impl OpusBox {
+
+    pub fn new(config: &OpusConfig) -> Self {
+        Self {
+            channel_count: config.chan_conf as u16,
+            sample_size: 16,
+            sample_rate: FixedPointU16::new(config.freq_index.freq() as u16),
+            dops_box: Some(DopsBox::new(config)),
+            data_reference_index: 1,
+        }
+    }
+
     pub fn get_type(&self) -> BoxType {
         BoxType::OpusBox
     }
@@ -186,6 +197,20 @@ impl Mp4Box for DopsBox {
 
     fn summary(&self) -> Result<String> {
         Ok(String::new())
+    }
+}
+
+impl DopsBox {
+    pub fn new(config: &OpusConfig) -> Self {
+        Self {
+            version: 0,
+            output_channel_count: config.chan_conf as u8,
+            pre_skip: config.pre_skip,
+            input_sample_rate: config.freq_index.freq(),
+            output_gain: 0,
+            channel_mapping_family: 0,
+            channel_mapping_table: None,
+        }
     }
 }
 
