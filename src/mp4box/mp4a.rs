@@ -305,7 +305,6 @@ fn write_desc<W: Write>(writer: &mut W, tag: u8, size: u32) -> Result<u64> {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
 pub struct ESDescriptor {
     pub es_id: u16,
-
     pub dec_config: DecoderConfigDescriptor,
     pub sl_config: SLConfigDescriptor,
 }
@@ -313,7 +312,7 @@ pub struct ESDescriptor {
 impl ESDescriptor {
     pub fn new(config: &AacConfig) -> Self {
         Self {
-            es_id: 1,
+            es_id: config.es_id,
             dec_config: DecoderConfigDescriptor::new(config),
             sl_config: SLConfigDescriptor::new(),
         }
@@ -400,11 +399,11 @@ pub struct DecoderConfigDescriptor {
 impl DecoderConfigDescriptor {
     pub fn new(config: &AacConfig) -> Self {
         Self {
-            object_type_indication: config.object_type_indication, // XXX AAC
-            stream_type: config.stream_type,            // XXX Audio
+            object_type_indication: config.object_type_indication, 
+            stream_type: config.stream_type,           
             up_stream: 0,
-            buffer_size_db: 0,
-            max_bitrate: config.bitrate, // XXX
+            buffer_size_db: config.buffer_size_db,
+            max_bitrate: config.bitrate, 
             avg_bitrate: config.bitrate,
             dec_specific: DecoderSpecificDescriptor::new(config),
         }

@@ -65,6 +65,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
                 es_id: 1,
                 object_type_indication: 0x40,
                 stream_type: 5,
+                buffer_size_db: 0,
             }),
             MediaType::OPUS => MediaConfig::OpusConfig(OpusConfig {
                 bitrate: track.bitrate(),

@@ -619,6 +619,7 @@ pub struct AacConfig {
     pub es_id: u16,
     pub object_type_indication: u8,
     pub stream_type: u8,
+    pub buffer_size_db: u8,
 }
 
 impl Default for AacConfig {
@@ -631,6 +632,7 @@ impl Default for AacConfig {
             es_id: 1, 
             object_type_indication: 0x40,
             stream_type: 5,
+            buffer_size_db: 0,
         }
     }
 }
