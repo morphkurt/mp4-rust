@@ -394,7 +394,6 @@ pub struct DecoderConfigDescriptor {
     pub buffer_size_db: u32,
     pub max_bitrate: u32,
     pub avg_bitrate: u32,
-
     pub dec_specific: DecoderSpecificDescriptor,
 }
 
