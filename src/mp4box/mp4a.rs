@@ -400,8 +400,8 @@ pub struct DecoderConfigDescriptor {
 impl DecoderConfigDescriptor {
     pub fn new(config: &AacConfig) -> Self {
         Self {
-            object_type_indication: 0x40, // XXX AAC
-            stream_type: 0x05,            // XXX Audio
+            object_type_indication: config.object_type_indication, // XXX AAC
+            stream_type: config.stream_type,            // XXX Audio
             up_stream: 0,
             buffer_size_db: 0,
             max_bitrate: config.bitrate, // XXX
