@@ -616,10 +616,6 @@ pub struct AacConfig {
     pub profile: AudioObjectType,
     pub freq_index: SampleFreqIndex,
     pub chan_conf: ChannelConfig,
-    pub es_id: u16,
-    pub object_type_indication: u8,
-    pub stream_type: u8,
-    pub buffer_size_db: u32,
 }
 
 impl Default for AacConfig {
@@ -629,10 +625,6 @@ impl Default for AacConfig {
             profile: AudioObjectType::AacLowComplexity,
             freq_index: SampleFreqIndex::Freq48000,
             chan_conf: ChannelConfig::Stereo,
-            es_id: 1, 
-            object_type_indication: 0x40,
-            stream_type: 5,
-            buffer_size_db: 0,
         }
     }
 }
