@@ -932,15 +932,12 @@ impl Mp4TrackWriter {
     }
 
     pub(crate) fn update_edit_list(&mut self, offset: u64, duration: u64) -> Result<()> {
-        self.offset = offset ;
+        self.offset = offset;
         self.duration = duration;
         Ok(())
     }
 
-    pub(crate) fn write_end<W: Write + Seek>(
-        &mut self,
-        writer: &mut W,
-    ) -> Result<TrakBox> {
+    pub(crate) fn write_end<W: Write + Seek>(&mut self, writer: &mut W) -> Result<TrakBox> {
         self.write_chunk(writer)?;
 
         let max_sample_size = self.max_sample_size();

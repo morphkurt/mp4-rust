@@ -1,4 +1,5 @@
 use byteorder::{BigEndian, WriteBytesExt};
+use std::cmp;
 use std::io::{Seek, SeekFrom, Write};
 
 use crate::mp4box::*;
@@ -20,7 +21,6 @@ pub struct Mp4Writer<W> {
     mdat_pos: u64,
     timescale: u32,
     duration: u64,
-    offsets: Vec<u64>,
 }
 
 impl<W> Mp4Writer<W> {
@@ -75,7 +75,6 @@ impl<W: Write + Seek> Mp4Writer<W> {
         BoxHeader::new(BoxType::WideBox, HEADER_SIZE).write(&mut writer)?;
 
         let tracks = Vec::new();
-        let offsets = Vec::new();
         let timescale = config.timescale;
         let duration = 0;
         Ok(Self {
@@ -84,7 +83,6 @@ impl<W: Write + Seek> Mp4Writer<W> {
             mdat_pos,
             timescale,
             duration,
-            offsets,
         })
     }
 
@@ -99,7 +97,8 @@ impl<W: Write + Seek> Mp4Writer<W> {
         if let Some(track) = self.tracks.get_mut(track_index as usize) {
             //convert duration to mvhd timescale
             let duration = duration_us * self.timescale as u64 / 1_000_000;
-            track.update_edit_list(offset,duration)?
+
+            track.update_edit_list(offset, cmp::min(duration, self.duration))?
         } else {
             return Err(Error::TrakNotFound(track_index));
         }
