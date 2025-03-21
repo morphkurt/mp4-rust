@@ -959,6 +959,7 @@ impl Mp4TrackWriter {
                 }],
             }),
         });
+        print!("{:?}",self.trak);
         if let Some(ref mut mp4a) = self.trak.mdia.minf.stbl.stsd.mp4a {
             if let Some(ref mut esds) = mp4a.esds {
                 esds.es_desc.dec_config.buffer_size_db = max_sample_size;
