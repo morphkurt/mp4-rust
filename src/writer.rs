@@ -85,11 +85,11 @@ impl<W: Write + Seek> Mp4Writer<W> {
         })
     }
 
-    pub fn add_track(&mut self, config: &TrackConfig) -> Result<()> {
+    pub fn add_track(&mut self, config: &TrackConfig) -> Result<u32> {
         let track_id = self.tracks.len() as u32 + 1;
         let track = Mp4TrackWriter::new(track_id, config)?;
         self.tracks.push(track);
-        Ok(())
+        Ok(track_id)
     }
 
     fn update_durations(&mut self, track_dur: u64) {

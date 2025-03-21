@@ -15,7 +15,7 @@
 //! use mp4::{Result};
 //!
 //! fn main() -> Result<()> {
-//!     let f = File::open("tests/samples/he-aac.mp4").unwrap();
+//!     let f = File::open("tests/samples/minimal.mp4").unwrap();
 //!     let size = f.metadata()?.len();
 //!     let reader = BufReader::new(f);
 //!
