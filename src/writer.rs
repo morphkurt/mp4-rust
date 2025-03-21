@@ -146,4 +146,21 @@ impl<W: Write + Seek> Mp4Writer<W> {
         moov.write_box(&mut self.writer)?;
         Ok(())
     }
+
+    pub fn write_end_with_offset(&mut self, offset: u64) -> Result<()> {
+        let mut moov = MoovBox::default();
+
+        for track in self.tracks.iter_mut() {
+            moov.traks.push(track.write_end_with_offset(&mut self.writer,offset)?);
+        }
+        self.update_mdat_size()?;
+
+        moov.mvhd.timescale = self.timescale;
+        moov.mvhd.duration = self.duration;
+        if moov.mvhd.duration > (u32::MAX as u64) {
+            moov.mvhd.version = 1
+        }
+        moov.write_box(&mut self.writer)?;
+        Ok(())
+    }
 }
