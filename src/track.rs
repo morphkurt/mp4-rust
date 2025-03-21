@@ -952,7 +952,7 @@ impl Mp4TrackWriter {
                 version: 1,
                 flags: 0,
                 entries: vec![ElstEntry {
-                    segment_duration: self.trak.mdia.mdhd.duration,
+                    segment_duration: (offset * 1_000) / 1_000_000,
                     media_time: (offset * self.trak.mdia.mdhd.timescale as u64) / 1_000_000,
                     media_rate: 1,
                     media_rate_fraction: 0,
