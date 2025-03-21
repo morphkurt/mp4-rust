@@ -5,7 +5,8 @@ use std::io::{self, BufReader, BufWriter};
 use std::path::Path;
 
 use mp4::{
-    AacConfig, AvcConfig, HevcConfig, MediaConfig, MediaType, Mp4Config, OpusConfig, Result, TrackConfig, TtxtConfig, Vp9Config
+    AacConfig, AvcConfig, HevcConfig, MediaConfig, MediaType, Mp4Config, OpusConfig, Result,
+    TrackConfig, TtxtConfig, Vp9Config,
 };
 
 fn main() {
@@ -61,7 +62,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
                 bitrate: track.bitrate(),
                 profile: track.audio_profile()?,
                 freq_index: track.sample_freq_index()?,
-                chan_conf: track.channel_config()?
+                chan_conf: track.channel_config()?,
             }),
             MediaType::OPUS => MediaConfig::OpusConfig(OpusConfig {
                 bitrate: track.bitrate(),

@@ -231,7 +231,8 @@ pub enum MediaType {
     VP9,
     AAC,
     OPUS,
-    TTXT}
+    TTXT,
+}
 
 impl fmt::Display for MediaType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

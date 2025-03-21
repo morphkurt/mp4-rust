@@ -20,6 +20,7 @@ pub struct Mp4Writer<W> {
     mdat_pos: u64,
     timescale: u32,
     duration: u64,
+    offsets: Vec<u64>,
 }
 
 impl<W> Mp4Writer<W> {
@@ -74,6 +75,7 @@ impl<W: Write + Seek> Mp4Writer<W> {
         BoxHeader::new(BoxType::WideBox, HEADER_SIZE).write(&mut writer)?;
 
         let tracks = Vec::new();
+        let offsets = Vec::new();
         let timescale = config.timescale;
         let duration = 0;
         Ok(Self {
@@ -82,6 +84,7 @@ impl<W: Write + Seek> Mp4Writer<W> {
             mdat_pos,
             timescale,
             duration,
+            offsets,
         })
     }
 
@@ -90,6 +93,15 @@ impl<W: Write + Seek> Mp4Writer<W> {
         let track = Mp4TrackWriter::new(track_id, config)?;
         self.tracks.push(track);
         Ok(track_id)
+    }
+
+    pub fn update_offset(&mut self, track_index: u32, offset_us: u64) -> Result<()> {
+        if let Some(track) = self.tracks.get_mut(track_index as usize) {
+            track.update_offset(offset_us)?
+        } else {
+            return Err(Error::TrakNotFound(track_index));
+        }
+        Ok(())
     }
 
     fn update_durations(&mut self, track_dur: u64) {
@@ -135,23 +147,6 @@ impl<W: Write + Seek> Mp4Writer<W> {
 
         for track in self.tracks.iter_mut() {
             moov.traks.push(track.write_end(&mut self.writer)?);
-        }
-        self.update_mdat_size()?;
-
-        moov.mvhd.timescale = self.timescale;
-        moov.mvhd.duration = self.duration;
-        if moov.mvhd.duration > (u32::MAX as u64) {
-            moov.mvhd.version = 1
-        }
-        moov.write_box(&mut self.writer)?;
-        Ok(())
-    }
-
-    pub fn write_end_with_offset(&mut self, offset: u64) -> Result<()> {
-        let mut moov = MoovBox::default();
-
-        for track in self.tracks.iter_mut() {
-            moov.traks.push(track.write_end_with_offset(&mut self.writer,offset)?);
         }
         self.update_mdat_size()?;
 

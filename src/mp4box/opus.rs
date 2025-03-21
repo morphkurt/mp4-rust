@@ -28,7 +28,6 @@ impl Default for OpusBox {
 }
 
 impl OpusBox {
-
     pub fn new(config: &OpusConfig) -> Self {
         Self {
             channel_count: config.chan_conf as u16,

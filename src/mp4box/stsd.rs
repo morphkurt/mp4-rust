@@ -47,8 +47,7 @@ impl StsdBox {
             size += mp4a.box_size();
         } else if let Some(ref opus) = self.opus {
             size += opus.box_size();
-        }  
-        else if let Some(ref tx3g) = self.tx3g {
+        } else if let Some(ref tx3g) = self.tx3g {
             size += tx3g.box_size();
         }
         size
@@ -154,7 +153,7 @@ impl<W: Write> WriteBox<&mut W> for StsdBox {
             mp4a.write_box(writer)?;
         } else if let Some(ref tx3g) = self.tx3g {
             tx3g.write_box(writer)?;
-        }else if let Some(ref opus) = self.opus {
+        } else if let Some(ref opus) = self.opus {
             opus.write_box(writer)?;
         }
 
