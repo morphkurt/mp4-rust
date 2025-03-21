@@ -95,9 +95,11 @@ impl<W: Write + Seek> Mp4Writer<W> {
         Ok(track_id)
     }
 
-    pub fn update_offset(&mut self, track_index: u32, offset_us: u64) -> Result<()> {
+    pub fn update_offset(&mut self, track_index: u32, offset: u64, duration_us: u64) -> Result<()> {
         if let Some(track) = self.tracks.get_mut(track_index as usize) {
-            track.update_offset(offset_us)?
+            //convert duration to mvhd timescale
+            let duration = duration_us * self.timescale as u64 / 1_000_000;
+            track.update_edit_list(offset,duration)?
         } else {
             return Err(Error::TrakNotFound(track_index));
         }

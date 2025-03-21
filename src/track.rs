@@ -668,6 +668,7 @@ pub(crate) struct Mp4TrackWriter {
     samples_per_chunk: u32,
     duration_per_chunk: u32,
     offset: u64,
+    duration: u64,
 }
 
 impl Mp4TrackWriter {
@@ -930,19 +931,15 @@ impl Mp4TrackWriter {
         }
     }
 
-    pub(crate) fn update_offset(&mut self, offset: u64) -> Result<()> {
-        self.offset = offset;
+    pub(crate) fn update_edit_list(&mut self, offset: u64, duration: u64) -> Result<()> {
+        self.offset = offset ;
+        self.duration = duration;
         Ok(())
     }
 
-    pub(crate) fn write_end<W: Write + Seek>(&mut self, writer: &mut W) -> Result<TrakBox> {
-        return self.write_end_with_offset(writer, 0);
-    }
-
-    pub(crate) fn write_end_with_offset<W: Write + Seek>(
+    pub(crate) fn write_end<W: Write + Seek>(
         &mut self,
         writer: &mut W,
-        offset: u64,
     ) -> Result<TrakBox> {
         self.write_chunk(writer)?;
 
@@ -952,14 +949,13 @@ impl Mp4TrackWriter {
                 version: 1,
                 flags: 0,
                 entries: vec![ElstEntry {
-                    segment_duration: self.trak.tkhd.duration,
+                    segment_duration: self.duration,
                     media_time: self.offset,
                     media_rate: 1,
                     media_rate_fraction: 0,
                 }],
             }),
         });
-        print!("{:?}",self.trak);
         if let Some(ref mut mp4a) = self.trak.mdia.minf.stbl.stsd.mp4a {
             if let Some(ref mut esds) = mp4a.esds {
                 esds.es_desc.dec_config.buffer_size_db = max_sample_size;
