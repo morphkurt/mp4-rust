@@ -619,6 +619,23 @@ impl Mp4Track {
         }
     }
 
+    pub(crate) fn read_sample_metadata<R: Read + Seek>(
+        &self,
+        reader: &mut R,
+        sample_id: u32,
+    ) -> Result<Option<Mp4SampleMetadata>> {
+        let (start_time, duration) = self.sample_time(sample_id).unwrap(); 
+        let rendering_offset = self.sample_rendering_offset(sample_id);
+        let is_sync = self.is_sync_sample(sample_id);
+
+        Ok(Some(Mp4SampleMetadata {
+            start_time,
+            duration,
+            rendering_offset,
+            is_sync,
+        }))
+    }
+
     pub(crate) fn read_sample<R: Read + Seek>(
         &self,
         reader: &mut R,

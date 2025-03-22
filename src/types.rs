@@ -671,6 +671,14 @@ pub struct Mp4Sample {
     pub bytes: Bytes,
 }
 
+#[derive(Debug)]
+pub struct Mp4SampleMetadata {
+    pub start_time: u64,
+    pub duration: u32,
+    pub rendering_offset: i32,
+    pub is_sync: bool,
+}
+
 impl PartialEq for Mp4Sample {
     fn eq(&self, other: &Self) -> bool {
         self.start_time == other.start_time
