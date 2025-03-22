@@ -63,6 +63,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
                 profile: track.audio_profile()?,
                 freq_index: track.sample_freq_index()?,
                 chan_conf: track.channel_config()?,
+                esds: None
             }),
             MediaType::OPUS => MediaConfig::OpusConfig(OpusConfig {
                 bitrate: track.bitrate(),

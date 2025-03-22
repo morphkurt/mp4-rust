@@ -28,13 +28,13 @@ impl Default for Mp4aBox {
 }
 
 impl Mp4aBox {
-    pub fn new(config: &AacConfig) -> Self {
+    pub fn new(config: &AacConfig ) -> Self {
         Self {
             data_reference_index: 1,
             channelcount: config.chan_conf as u16,
             samplesize: 16,
             samplerate: FixedPointU16::new(config.freq_index.freq() as u16),
-            esds: Some(EsdsBox::new(config)),
+            esds: config.esds.clone(),
         }
     }
 
@@ -313,10 +313,16 @@ pub struct ESDescriptor {
 
 impl ESDescriptor {
     pub fn new(config: &AacConfig) -> Self {
+        let mut dec_config = DecoderConfigDescriptor::new(config);
+        let mut sl_config =  SLConfigDescriptor::new();
+        if config.esds.is_some() {
+            dec_config = config.esds.clone().unwrap().es_desc.dec_config;
+            sl_config = config.esds.clone().unwrap().es_desc.sl_config;
+        }
         Self {
             es_id: 1,
-            dec_config: DecoderConfigDescriptor::new(config),
-            sl_config: SLConfigDescriptor::new(),
+            dec_config: dec_config,
+            sl_config: sl_config,
         }
     }
 }

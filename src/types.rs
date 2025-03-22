@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::fmt;
 
+use crate::mp4a::EsdsBox;
 use crate::mp4box::*;
 use crate::*;
 
@@ -617,6 +618,7 @@ pub struct AacConfig {
     pub profile: AudioObjectType,
     pub freq_index: SampleFreqIndex,
     pub chan_conf: ChannelConfig,
+    pub esds: Option<EsdsBox>,
 }
 
 impl Default for AacConfig {
@@ -626,6 +628,7 @@ impl Default for AacConfig {
             profile: AudioObjectType::AacLowComplexity,
             freq_index: SampleFreqIndex::Freq48000,
             chan_conf: ChannelConfig::Stereo,
+            esds: None,
         }
     }
 }

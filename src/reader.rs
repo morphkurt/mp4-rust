@@ -272,7 +272,7 @@ impl<R: Read + Seek> Mp4Reader<R> {
 
     pub fn read_sample_metadata(&mut self, track_id: u32, sample_id: u32) -> Result<Option<Mp4SampleMetadata>> {
         if let Some(track) = self.tracks.get(&track_id) {
-            track.read_sample_metadata(&mut self.reader, sample_id)
+            track.read_sample_metadata(sample_id)
         } else {
             Err(Error::TrakNotFound(track_id))
         }

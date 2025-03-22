@@ -619,9 +619,8 @@ impl Mp4Track {
         }
     }
 
-    pub(crate) fn read_sample_metadata<R: Read + Seek>(
+    pub(crate) fn read_sample_metadata(
         &self,
-        reader: &mut R,
         sample_id: u32,
     ) -> Result<Option<Mp4SampleMetadata>> {
         let (start_time, duration) = self.sample_time(sample_id).unwrap(); 
