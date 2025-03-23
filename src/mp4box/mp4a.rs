@@ -28,7 +28,7 @@ impl Default for Mp4aBox {
 }
 
 impl Mp4aBox {
-    pub fn new(config: &AacConfig ) -> Self {
+    pub fn new(config: &AacConfig) -> Self {
         Self {
             data_reference_index: 1,
             channelcount: config.chan_conf as u16,
@@ -314,7 +314,7 @@ pub struct ESDescriptor {
 impl ESDescriptor {
     pub fn new(config: &AacConfig) -> Self {
         let mut dec_config = DecoderConfigDescriptor::new(config);
-        let mut sl_config =  SLConfigDescriptor::new();
+        let mut sl_config = SLConfigDescriptor::new();
         if config.esds.is_some() {
             dec_config = config.esds.clone().unwrap().es_desc.dec_config;
             sl_config = config.esds.clone().unwrap().es_desc.sl_config;

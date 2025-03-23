@@ -5,6 +5,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::time::Duration;
 
 use crate::elst::ElstEntry;
+use crate::mp4a::EsdsBox;
 use crate::mp4box::traf::TrafBox;
 use crate::mp4box::trak::TrakBox;
 use crate::mp4box::trun::TrunBox;
@@ -301,6 +302,15 @@ impl Mp4Track {
         } else {
             Err(Error::BoxInStblNotFound(self.track_id(), BoxType::Avc1Box))
         }
+    }
+
+    pub fn get_esds(&self) -> Result<&EsdsBox> {
+        if let Some(ref mp4a) = self.trak.mdia.minf.stbl.stsd.mp4a {
+            if let Some(ref esds) = mp4a.esds {
+                return Ok(esds);
+            }
+        }
+        Err(Error::BoxInStblNotFound(self.track_id(), BoxType::EsdsBox))
     }
 
     pub fn picture_parameter_set(&self) -> Result<&[u8]> {
@@ -619,11 +629,8 @@ impl Mp4Track {
         }
     }
 
-    pub(crate) fn read_sample_metadata(
-        &self,
-        sample_id: u32,
-    ) -> Result<Option<Mp4SampleMetadata>> {
-        let (start_time, duration) = self.sample_time(sample_id).unwrap(); 
+    pub(crate) fn read_sample_metadata(&self, sample_id: u32) -> Result<Option<Mp4SampleMetadata>> {
+        let (start_time, duration) = self.sample_time(sample_id).unwrap();
         let rendering_offset = self.sample_rendering_offset(sample_id);
         let is_sync = self.is_sync_sample(sample_id);
 
