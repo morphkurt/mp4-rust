@@ -168,9 +168,11 @@ impl<W: Write> WriteBox<&mut W> for Mp4aBox {
         writer.write_u32::<BigEndian>(0)?; // reserved
         writer.write_u32::<BigEndian>(self.samplerate.raw_value())?;
 
-        if let Some(ref qt_bytes) = self.qt_bytes {
+        if self.sound_version !=0  {
+         if let Some(ref qt_bytes) = self.qt_bytes {
             writer.write_all(&qt_bytes)?;
         }
+    }
 
         if let Some(ref esds) = self.esds {
             esds.write_box(writer)?;
