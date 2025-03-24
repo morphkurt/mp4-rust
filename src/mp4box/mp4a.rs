@@ -297,12 +297,7 @@ fn read_desc<R: Read>(reader: &mut R) -> Result<(u8, u32)> {
 }
 
 fn size_of_length(size: u32) -> u32 {
-    match size {
-        0x0..=0x7F => 1,
-        0x80..=0x3FFF => 2,
-        0x4000..=0x1FFFFF => 3,
-        _ => 4,
-    }
+    return 4;
 }
 
 fn write_desc<W: Write>(writer: &mut W, tag: u8, size: u32) -> Result<u64> {
@@ -771,7 +766,7 @@ mod tests {
             let mut buf = Vec::new();
             let written = src_dec_spec.write_desc(&mut buf).unwrap();
             // expect two extra bytes for the tag and size fields
-            assert_eq!(buf.len(), written as usize + 2);
+            assert_eq!(buf.len(), written as usize + 5);
 
             let mut reader = Cursor::new(&buf);
             let (tag, size) = read_desc(&mut reader).unwrap();
