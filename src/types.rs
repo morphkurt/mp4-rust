@@ -681,7 +681,7 @@ impl AacConfig {
 
             // Set new fields from mp4a
             data_reference_index: mp4a.data_reference_index,
-            sound_version: mp4a.sound_version,
+            sound_version: 0,
 
             samplesize: mp4a.samplesize,
             qt_bytes: mp4a.qt_bytes.clone(),
