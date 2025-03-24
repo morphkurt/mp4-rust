@@ -40,7 +40,7 @@ impl Mp4aBox {
             samplesize: config.samplesize,
             samplerate: FixedPointU16::new(config.freq_index.freq() as u16),
             qt_bytes: config.qt_bytes.clone(),
-            esds: Some(EsdsBox::default()),
+            esds: Some(EsdsBox::new(config)),
         }
     }
 
