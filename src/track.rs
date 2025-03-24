@@ -701,6 +701,7 @@ impl Mp4TrackWriter {
         trak.mdia.mdhd.timescale = config.timescale;
         config.language.clone_into(&mut trak.mdia.mdhd.language);
         trak.mdia.hdlr.handler_type = config.track_type.into();
+        trak.mdia.hdlr.name = config.track_type.into();
         trak.mdia.minf.stbl.co64 = Some(Co64Box::default());
         match config.media_conf {
             MediaConfig::AvcConfig(ref avc_config) => {

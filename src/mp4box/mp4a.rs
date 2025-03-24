@@ -300,7 +300,7 @@ fn read_desc<R: Read>(reader: &mut R) -> Result<(u8, u32)> {
     Ok((tag, size))
 }
 
-fn size_of_length(size: u32) -> u32 {
+fn size_of_length(_: u32) -> u32 {
     return 4;
 }
 

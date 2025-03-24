@@ -218,6 +218,16 @@ impl From<TrackType> for FourCC {
     }
 }
 
+impl From<TrackType> for String {
+    fn from(t: TrackType) -> String {
+        match t {
+            TrackType::Video => "VideoHandler".to_string(),
+            TrackType::Audio => "SoundHandler".to_string(),
+            TrackType::Subtitle => "ClosedCaptionHandler".to_string(),
+        }
+    }
+}
+
 const MEDIA_TYPE_H264: &str = "h264";
 const MEDIA_TYPE_H265: &str = "h265";
 const MEDIA_TYPE_VP9: &str = "vp9";
