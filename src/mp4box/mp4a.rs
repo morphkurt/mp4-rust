@@ -50,8 +50,10 @@ impl Mp4aBox {
 
     pub fn get_size(&self) -> u64 {
         let mut size = HEADER_SIZE + 8 + 20;
-        if let Some(ref qt_bytes) = self.qt_bytes {
-            size += qt_bytes.len() as u64;
+        if self.sound_version != 0 {
+            if let Some(ref qt_bytes) = self.qt_bytes {
+                size += qt_bytes.len() as u64;
+            }
         }
         if let Some(ref esds) = self.esds {
             size += esds.box_size();
