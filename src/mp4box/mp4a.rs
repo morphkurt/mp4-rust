@@ -7,8 +7,10 @@ use crate::mp4box::*;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Mp4aBox {
     pub data_reference_index: u16,
+    pub sound_version: u16,
     pub channelcount: u16,
     pub samplesize: u16,
+    pub qt_bytes: Option<Vec<u8>>,
 
     #[serde(with = "value_u32")]
     pub samplerate: FixedPointU16,
@@ -19,9 +21,11 @@ impl Default for Mp4aBox {
     fn default() -> Self {
         Self {
             data_reference_index: 0,
+            sound_version: 0,
             channelcount: 2,
             samplesize: 16,
             samplerate: FixedPointU16::new(48000),
+            qt_bytes: None,
             esds: Some(EsdsBox::default()),
         }
     }
@@ -31,10 +35,12 @@ impl Mp4aBox {
     pub fn new(config: &AacConfig) -> Self {
         Self {
             data_reference_index: 1,
+            sound_version: 0,
             channelcount: config.chan_conf as u16,
             samplesize: 16,
             samplerate: FixedPointU16::new(config.freq_index.freq() as u16),
-            esds: config.esds.clone(),
+            qt_bytes: None,
+            esds: Some(EsdsBox::default()),
         }
     }
 
@@ -44,6 +50,9 @@ impl Mp4aBox {
 
     pub fn get_size(&self) -> u64 {
         let mut size = HEADER_SIZE + 8 + 20;
+        if let Some(ref qt_bytes) = self.qt_bytes {
+            size += qt_bytes.len() as u64;
+        }
         if let Some(ref esds) = self.esds {
             size += esds.box_size();
         }
@@ -82,20 +91,23 @@ impl<R: Read + Seek> ReadBox<&mut R> for Mp4aBox {
         reader.read_u32::<BigEndian>()?; // reserved
         reader.read_u16::<BigEndian>()?; // reserved
         let data_reference_index = reader.read_u16::<BigEndian>()?;
-        let version = reader.read_u16::<BigEndian>()?;
+        let sound_version: u16 = reader.read_u16::<BigEndian>()?;
         reader.read_u16::<BigEndian>()?; // reserved
         reader.read_u32::<BigEndian>()?; // reserved
         let channelcount = reader.read_u16::<BigEndian>()?;
         let samplesize = reader.read_u16::<BigEndian>()?;
         reader.read_u32::<BigEndian>()?; // pre-defined, reserved
         let samplerate = FixedPointU16::new_raw(reader.read_u32::<BigEndian>()?);
-
-        if version == 1 {
-            // Skip QTFF
-            reader.read_u64::<BigEndian>()?;
-            reader.read_u64::<BigEndian>()?;
+        let mut qt_bytes = None;
+        if sound_version == 1 {
+            let mut buffer = [0u8; 16];
+            reader.read_exact(&mut buffer)?;
+            qt_bytes = Some(buffer.to_vec());
+        } else if sound_version == 2 {
+            let mut buffer = [0u8; 36];
+            reader.read_exact(&mut buffer)?;
+            qt_bytes = Some(buffer.to_vec());
         }
-
         // Find esds in mp4a or wave
         let mut esds = None;
         let end = start + size;
@@ -127,9 +139,11 @@ impl<R: Read + Seek> ReadBox<&mut R> for Mp4aBox {
 
         Ok(Mp4aBox {
             data_reference_index,
+            sound_version: sound_version,
             channelcount,
             samplesize,
             samplerate,
+            qt_bytes,
             esds,
         })
     }
@@ -144,11 +158,19 @@ impl<W: Write> WriteBox<&mut W> for Mp4aBox {
         writer.write_u16::<BigEndian>(0)?; // reserved
         writer.write_u16::<BigEndian>(self.data_reference_index)?;
 
-        writer.write_u64::<BigEndian>(0)?; // reserved
+        writer.write_u16::<BigEndian>(self.sound_version)?; // version = 1
+
+        writer.write_u16::<BigEndian>(0)?; // reserved
+        writer.write_u32::<BigEndian>(0)?; // reserved
+
         writer.write_u16::<BigEndian>(self.channelcount)?;
         writer.write_u16::<BigEndian>(self.samplesize)?;
         writer.write_u32::<BigEndian>(0)?; // reserved
         writer.write_u32::<BigEndian>(self.samplerate.raw_value())?;
+
+        if let Some(ref qt_bytes) = self.qt_bytes {
+            writer.write_all(&qt_bytes)?;
+        }
 
         if let Some(ref esds) = self.esds {
             esds.write_box(writer)?;
@@ -313,12 +335,8 @@ pub struct ESDescriptor {
 
 impl ESDescriptor {
     pub fn new(config: &AacConfig) -> Self {
-        let mut dec_config = DecoderConfigDescriptor::new(config);
-        let mut sl_config = SLConfigDescriptor::new();
-        if config.esds.is_some() {
-            dec_config = config.esds.clone().unwrap().es_desc.dec_config;
-            sl_config = config.esds.clone().unwrap().es_desc.sl_config;
-        }
+        let dec_config = DecoderConfigDescriptor::new(config);
+        let sl_config = SLConfigDescriptor::new();
         Self {
             es_id: 1,
             dec_config: dec_config,
@@ -640,8 +658,10 @@ mod tests {
     fn test_mp4a() {
         let src_box = Mp4aBox {
             data_reference_index: 1,
+            sound_version: 0,
             channelcount: 2,
             samplesize: 16,
+            qt_bytes: None,
             samplerate: FixedPointU16::new(48000),
             esds: Some(EsdsBox {
                 version: 0,
@@ -679,12 +699,57 @@ mod tests {
     }
 
     #[test]
+    fn test_mp4a_with_qt_bytes() {
+        let src_box = Mp4aBox {
+            data_reference_index: 1,
+            sound_version: 1,
+            channelcount: 2,
+            samplesize: 16,
+            qt_bytes: Some([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1].to_vec()),
+            samplerate: FixedPointU16::new(48000),
+            esds: Some(EsdsBox {
+                version: 0,
+                flags: 0,
+                es_desc: ESDescriptor {
+                    es_id: 2,
+                    dec_config: DecoderConfigDescriptor {
+                        object_type_indication: 0x40,
+                        stream_type: 0x05,
+                        up_stream: 0,
+                        buffer_size_db: 0,
+                        max_bitrate: 67695,
+                        avg_bitrate: 67695,
+                        dec_specific: DecoderSpecificDescriptor {
+                            profile: 2,
+                            freq_index: 3,
+                            chan_conf: 1,
+                        },
+                    },
+                    sl_config: SLConfigDescriptor::default(),
+                },
+            }),
+        };
+        let mut buf = Vec::new();
+        src_box.write_box(&mut buf).unwrap();
+        assert_eq!(buf.len(), src_box.box_size() as usize);
+
+        let mut reader = Cursor::new(&buf);
+        let header = BoxHeader::read(&mut reader).unwrap();
+        assert_eq!(header.name, BoxType::Mp4aBox);
+        assert_eq!(src_box.box_size(), header.size);
+        let dst_box = Mp4aBox::read_box(&mut reader, header.size).unwrap();
+        assert_eq!(src_box, dst_box);
+    }
+
+    #[test]
     fn test_mp4a_no_esds() {
         let src_box = Mp4aBox {
             data_reference_index: 1,
+            sound_version: 0,
             channelcount: 2,
             samplesize: 16,
             samplerate: FixedPointU16::new(48000),
+            qt_bytes: None,
             esds: None,
         };
         let mut buf = Vec::new();

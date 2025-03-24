@@ -618,17 +618,143 @@ pub struct AacConfig {
     pub profile: AudioObjectType,
     pub freq_index: SampleFreqIndex,
     pub chan_conf: ChannelConfig,
-    pub esds: Option<EsdsBox>,
+
+    // New fields from Mp4aBox and child structs
+    pub data_reference_index: u16,
+    pub sound_version: u16,
+
+    // From EsdsBox
+    pub esds_version: Option<u8>,
+    pub esds_flags: Option<u32>,
+
+    // From ESDescriptor
+    pub es_id: Option<u16>,
+
+    // From DecoderConfigDescriptor
+    pub object_type_indication: Option<u8>,
+    pub stream_type: Option<u8>,
+    pub up_stream: Option<u8>,
+    pub buffer_size_db: Option<u32>,
+    pub max_bitrate: Option<u32>,
+    pub avg_bitrate: Option<u32>,
+
+    pub qt_bytes: Option<Vec<u8>>,
+}
+
+impl AacConfig {
+    pub fn from_mp4a_box(mp4a: &Mp4aBox) -> Self {
+        let mut config = AacConfig {
+            // Set your existing required fields with appropriate defaults or mappings
+            bitrate: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| esds.es_desc.dec_config.avg_bitrate)
+                .unwrap_or(0),
+
+            profile: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| {
+                    AudioObjectType::try_from(esds.es_desc.dec_config.dec_specific.profile)
+                        .unwrap_or(AudioObjectType::AacLowComplexity)
+                })
+                .unwrap_or(AudioObjectType::AacLowComplexity),
+
+            freq_index: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| {
+                    SampleFreqIndex::try_from(esds.es_desc.dec_config.dec_specific.freq_index)
+                        .unwrap_or(SampleFreqIndex::Freq48000)
+                })
+                .unwrap_or(SampleFreqIndex::Freq48000),
+
+            chan_conf: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| {
+                    ChannelConfig::try_from(esds.es_desc.dec_config.dec_specific.chan_conf)
+                        .unwrap_or(ChannelConfig::Stereo)
+                })
+                .unwrap_or(ChannelConfig::Stereo),
+
+            // Set new fields from mp4a
+            data_reference_index: mp4a.data_reference_index,
+            sound_version: mp4a.sound_version,
+
+            qt_bytes: mp4a.qt_bytes.clone(),
+
+            // Set remaining fields to None initially
+            esds_version: mp4a.esds.as_ref().map(|esds| esds.version),
+            esds_flags: mp4a.esds.as_ref().map(|esds| esds.flags),
+            es_id: mp4a.esds.as_ref().map(|esds| esds.es_desc.es_id),
+            object_type_indication: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| esds.es_desc.dec_config.object_type_indication),
+            stream_type: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| esds.es_desc.dec_config.stream_type),
+            up_stream: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| esds.es_desc.dec_config.up_stream),
+            buffer_size_db: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| esds.es_desc.dec_config.buffer_size_db),
+            max_bitrate: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| esds.es_desc.dec_config.max_bitrate),
+            avg_bitrate: mp4a
+                .esds
+                .as_ref()
+                .map(|esds| esds.es_desc.dec_config.avg_bitrate),
+        };
+
+        // Fill in ESDS-related fields if present
+        if let Some(esds) = &mp4a.esds {
+            config.esds_version = Some(esds.version);
+            config.esds_flags = Some(esds.flags);
+            config.es_id = Some(esds.es_desc.es_id);
+
+            let dec_config = &esds.es_desc.dec_config;
+            config.object_type_indication = Some(dec_config.object_type_indication);
+            config.stream_type = Some(dec_config.stream_type);
+            config.up_stream = Some(dec_config.up_stream);
+            config.buffer_size_db = Some(dec_config.buffer_size_db);
+            config.max_bitrate = Some(dec_config.max_bitrate);
+            config.avg_bitrate = Some(dec_config.avg_bitrate);
+
+            // Assuming decoder_specific has a getter for its binary data
+            // config.decoder_specific_data = Some(dec_config.dec_specific.get_data().clone());
+        }
+        config
+    }
 }
 
 impl Default for AacConfig {
     fn default() -> Self {
+        let esds = EsdsBox::default();
         Self {
             bitrate: 0,
             profile: AudioObjectType::AacLowComplexity,
             freq_index: SampleFreqIndex::Freq48000,
             chan_conf: ChannelConfig::Stereo,
-            esds: None,
+            data_reference_index: 1,
+            sound_version: 0,
+            esds_version: Some(esds.version),
+            esds_flags: Some(esds.flags),
+            es_id: Some(esds.es_desc.es_id),
+            object_type_indication: Some(esds.es_desc.dec_config.object_type_indication),
+            stream_type: Some(esds.es_desc.dec_config.stream_type),
+            up_stream: Some(esds.es_desc.dec_config.up_stream),
+            buffer_size_db: Some(esds.es_desc.dec_config.buffer_size_db),
+            max_bitrate: Some(esds.es_desc.dec_config.max_bitrate),
+            avg_bitrate: Some(esds.es_desc.dec_config.avg_bitrate),
+            qt_bytes: None,
         }
     }
 }

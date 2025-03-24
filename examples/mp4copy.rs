@@ -58,13 +58,27 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
                 width: track.width(),
                 height: track.height(),
             }),
-            MediaType::AAC => MediaConfig::AacConfig(AacConfig {
-                bitrate: track.bitrate(),
-                profile: track.audio_profile()?,
-                freq_index: track.sample_freq_index()?,
-                chan_conf: track.channel_config()?,
-                esds: None,
-            }),
+            MediaType::AAC => {
+                let default_aac_config = AacConfig::default();
+                MediaConfig::AacConfig(AacConfig {
+                    bitrate: track.bitrate(),
+                    profile: track.audio_profile()?,
+                    freq_index: track.sample_freq_index()?,
+                    chan_conf: track.channel_config()?,
+                    data_reference_index: 1,
+                    sound_version: 0,
+                    esds_version: default_aac_config.esds_version,
+                    esds_flags: default_aac_config.esds_flags,
+                    es_id: default_aac_config.es_id,
+                    object_type_indication: default_aac_config.object_type_indication,
+                    stream_type: default_aac_config.stream_type,
+                    up_stream: default_aac_config.up_stream,
+                    buffer_size_db: default_aac_config.buffer_size_db,
+                    max_bitrate: default_aac_config.max_bitrate,
+                    avg_bitrate: default_aac_config.avg_bitrate,
+                    qt_bytes: default_aac_config.qt_bytes,
+                })
+            }
             MediaType::OPUS => MediaConfig::OpusConfig(OpusConfig {
                 bitrate: track.bitrate(),
                 freq_index: track.sample_freq_index()?,
