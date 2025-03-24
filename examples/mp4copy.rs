@@ -65,6 +65,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
                     profile: track.audio_profile()?,
                     freq_index: track.sample_freq_index()?,
                     chan_conf: track.channel_config()?,
+                    samplesize: 16,
                     data_reference_index: 1,
                     sound_version: 0,
                     esds_version: default_aac_config.esds_version,

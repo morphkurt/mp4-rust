@@ -34,12 +34,12 @@ impl Default for Mp4aBox {
 impl Mp4aBox {
     pub fn new(config: &AacConfig) -> Self {
         Self {
-            data_reference_index: 1,
-            sound_version: 0,
+            data_reference_index: config.data_reference_index,
+            sound_version: config.sound_version,
             channelcount: config.chan_conf as u16,
-            samplesize: 16,
+            samplesize: config.samplesize,
             samplerate: FixedPointU16::new(config.freq_index.freq() as u16),
-            qt_bytes: None,
+            qt_bytes: config.qt_bytes.clone(),
             esds: Some(EsdsBox::default()),
         }
     }
@@ -338,7 +338,7 @@ impl ESDescriptor {
         let dec_config = DecoderConfigDescriptor::new(config);
         let sl_config = SLConfigDescriptor::new();
         Self {
-            es_id: 1,
+            es_id: config.es_id.unwrap_or(0),
             dec_config: dec_config,
             sl_config: sl_config,
         }
@@ -428,12 +428,12 @@ pub struct DecoderConfigDescriptor {
 impl DecoderConfigDescriptor {
     pub fn new(config: &AacConfig) -> Self {
         Self {
-            object_type_indication: 0x40, // XXX AAC
-            stream_type: 0x05,            // XXX Audio
-            up_stream: 0,
-            buffer_size_db: 0,
-            max_bitrate: config.bitrate, // XXX
-            avg_bitrate: config.bitrate,
+            object_type_indication: config.object_type_indication.unwrap_or(0x40), // XXX AAC
+            stream_type: config.stream_type.unwrap_or(0x05),                       // XXX Audio
+            up_stream: config.up_stream.unwrap_or(0),
+            buffer_size_db: config.buffer_size_db.unwrap_or(0),
+            max_bitrate: config.max_bitrate.unwrap_or(config.bitrate), // XXX
+            avg_bitrate: config.max_bitrate.unwrap_or(config.bitrate),
             dec_specific: DecoderSpecificDescriptor::new(config),
         }
     }

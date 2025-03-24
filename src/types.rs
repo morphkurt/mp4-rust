@@ -622,6 +622,7 @@ pub struct AacConfig {
     // New fields from Mp4aBox and child structs
     pub data_reference_index: u16,
     pub sound_version: u16,
+    pub samplesize: u16,
 
     // From EsdsBox
     pub esds_version: Option<u8>,
@@ -682,6 +683,7 @@ impl AacConfig {
             data_reference_index: mp4a.data_reference_index,
             sound_version: mp4a.sound_version,
 
+            samplesize: mp4a.samplesize,
             qt_bytes: mp4a.qt_bytes.clone(),
 
             // Set remaining fields to None initially
@@ -727,9 +729,6 @@ impl AacConfig {
             config.buffer_size_db = Some(dec_config.buffer_size_db);
             config.max_bitrate = Some(dec_config.max_bitrate);
             config.avg_bitrate = Some(dec_config.avg_bitrate);
-
-            // Assuming decoder_specific has a getter for its binary data
-            // config.decoder_specific_data = Some(dec_config.dec_specific.get_data().clone());
         }
         config
     }
@@ -743,6 +742,7 @@ impl Default for AacConfig {
             profile: AudioObjectType::AacLowComplexity,
             freq_index: SampleFreqIndex::Freq48000,
             chan_conf: ChannelConfig::Stereo,
+            samplesize: 16,
             data_reference_index: 1,
             sound_version: 0,
             esds_version: Some(esds.version),
