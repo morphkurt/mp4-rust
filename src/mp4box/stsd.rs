@@ -4,7 +4,9 @@ use std::io::{Read, Seek, Write};
 
 use crate::mp4box::vp09::Vp09Box;
 use crate::mp4box::*;
-use crate::mp4box::{avc1::Avc1Box, hev1::Hev1Box,  hvc1::Hvc1Box, mp4a::Mp4aBox, opus::OpusBox, tx3g::Tx3gBox};
+use crate::mp4box::{
+    avc1::Avc1Box, hev1::Hev1Box, hvc1::Hvc1Box, mp4a::Mp4aBox, opus::OpusBox, tx3g::Tx3gBox,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
 pub struct StsdBox {

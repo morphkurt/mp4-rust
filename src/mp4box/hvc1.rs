@@ -101,38 +101,31 @@ impl<R: Read + Seek> ReadBox<&mut R> for Hvc1Box {
         let depth = reader.read_u16::<BigEndian>()?;
         reader.read_i16::<BigEndian>()?; // pre-defined
 
-        let mut hvcc = None;
-
-        while reader.stream_position()? < start + size {
-            let header = BoxHeader::read(reader)?;
-            let BoxHeader { name, size: s } = header;
-            if s > size {
-                return Err(Error::InvalidData(
-                    "hvc1 box contains a box with a larger size than it",
-                ));
-            }
-            if name == BoxType::HvcCBox {
-                hvcc = Some(HvcCBox::read_box(reader, s)?);
-            } else {
-                skip_box(reader, s)?;
-            }
+        let header = BoxHeader::read(reader)?;
+        let BoxHeader { name, size: s } = header;
+        if s > size {
+            return Err(Error::InvalidData(
+                "hev1 box contains a box with a larger size than it",
+            ));
         }
-        let Some(hvcc) = hvcc else {
-            return Err(Error::InvalidData("hvcc not found"));
-        };
+        if name == BoxType::HvcCBox {
+            let hvcc = HvcCBox::read_box(reader, s)?;
 
-        skip_bytes_to(reader, start + size)?;
+            skip_bytes_to(reader, start + size)?;
 
-        Ok(Hvc1Box {
-            data_reference_index,
-            width,
-            height,
-            horizresolution,
-            vertresolution,
-            frame_count,
-            depth,
-            hvcc,
-        })
+            Ok(Hvc1Box {
+                data_reference_index,
+                width,
+                height,
+                horizresolution,
+                vertresolution,
+                frame_count,
+                depth,
+                hvcc,
+            })
+        } else {
+            Err(Error::InvalidData("hvcc not found"))
+        }
     }
 }
 
