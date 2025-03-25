@@ -219,7 +219,7 @@ impl Mp4Track {
             if let Some(ref dops) = opus.dops_box {
                 SampleFreqIndex::try_from(dops.input_sample_rate)
             } else {
-                Err(Error::BoxInStblNotFound(self.track_id(), BoxType::DopsBox))
+                Err(Error::BoxInStblNotFound(self.track_id(), vec![BoxType::DopsBox]))
             }
         } else {
             Err(Error::BoxInStblNotFound(
@@ -243,7 +243,7 @@ impl Mp4Track {
             if let Some(ref dops) = opus.dops_box {
                 ChannelConfig::try_from(dops.output_channel_count)
             } else {
-                Err(Error::BoxInStblNotFound(self.track_id(), BoxType::DopsBox))
+                Err(Error::BoxInStblNotFound(self.track_id(), vec![BoxType::DopsBox]))
             }
         } else {
             Err(Error::BoxInStblNotFound(
@@ -344,7 +344,7 @@ impl Mp4Track {
                 return Ok(esds);
             }
         }
-        Err(Error::BoxInStblNotFound(self.track_id(), BoxType::EsdsBox))
+        Err(Error::BoxInStblNotFound(self.track_id(), vec![BoxType::EsdsBox]))
     }
 
     pub fn picture_parameter_set(&self) -> Result<&[u8]> {
