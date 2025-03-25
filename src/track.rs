@@ -135,7 +135,9 @@ impl Mp4Track {
     pub fn media_type(&self) -> Result<MediaType> {
         if self.trak.mdia.minf.stbl.stsd.avc1.is_some() {
             Ok(MediaType::H264)
-        } else if self.trak.mdia.minf.stbl.stsd.hev1.is_some() {
+        } else if self.trak.mdia.minf.stbl.stsd.hev1.is_some()
+            || self.trak.mdia.minf.stbl.stsd.hvc1.is_some()
+        {
             Ok(MediaType::H265)
         } else if self.trak.mdia.minf.stbl.stsd.vp09.is_some() {
             Ok(MediaType::VP9)
@@ -155,6 +157,8 @@ impl Mp4Track {
             Ok(FourCC::from(BoxType::Avc1Box))
         } else if self.trak.mdia.minf.stbl.stsd.hev1.is_some() {
             Ok(FourCC::from(BoxType::Hev1Box))
+        } else if self.trak.mdia.minf.stbl.stsd.hvc1.is_some() {
+            Ok(FourCC::from(BoxType::Hvc1Box))
         } else if self.trak.mdia.minf.stbl.stsd.vp09.is_some() {
             Ok(FourCC::from(BoxType::Vp09Box))
         } else if self.trak.mdia.minf.stbl.stsd.mp4a.is_some() {
@@ -171,6 +175,10 @@ impl Mp4Track {
     pub fn width(&self) -> u16 {
         if let Some(ref avc1) = self.trak.mdia.minf.stbl.stsd.avc1 {
             avc1.width
+        } else if let Some(ref hev1) = self.trak.mdia.minf.stbl.stsd.hev1 {
+            hev1.width
+        } else if let Some(ref hvc1) = self.trak.mdia.minf.stbl.stsd.hvc1 {
+            hvc1.width
         } else {
             self.trak.tkhd.width.value()
         }
@@ -179,6 +187,10 @@ impl Mp4Track {
     pub fn height(&self) -> u16 {
         if let Some(ref avc1) = self.trak.mdia.minf.stbl.stsd.avc1 {
             avc1.height
+        } else if let Some(ref hev1) = self.trak.mdia.minf.stbl.stsd.hev1 {
+            hev1.height
+        } else if let Some(ref hvc1) = self.trak.mdia.minf.stbl.stsd.hvc1 {
+            hvc1.height
         } else {
             self.trak.tkhd.height.value()
         }
@@ -198,7 +210,10 @@ impl Mp4Track {
             if let Some(ref esds) = mp4a.esds {
                 SampleFreqIndex::try_from(esds.es_desc.dec_config.dec_specific.freq_index)
             } else {
-                Err(Error::BoxInStblNotFound(self.track_id(), BoxType::EsdsBox))
+                Err(Error::BoxInStblNotFound(
+                    self.track_id(),
+                    vec![BoxType::EsdsBox],
+                ))
             }
         } else if let Some(ref opus) = self.trak.mdia.minf.stbl.stsd.opus {
             if let Some(ref dops) = opus.dops_box {
@@ -207,7 +222,10 @@ impl Mp4Track {
                 Err(Error::BoxInStblNotFound(self.track_id(), BoxType::DopsBox))
             }
         } else {
-            Err(Error::BoxInStblNotFound(self.track_id(), BoxType::Mp4aBox))
+            Err(Error::BoxInStblNotFound(
+                self.track_id(),
+                vec![BoxType::Mp4aBox],
+            ))
         }
     }
 
@@ -216,7 +234,10 @@ impl Mp4Track {
             if let Some(ref esds) = mp4a.esds {
                 ChannelConfig::try_from(esds.es_desc.dec_config.dec_specific.chan_conf)
             } else {
-                Err(Error::BoxInStblNotFound(self.track_id(), BoxType::EsdsBox))
+                Err(Error::BoxInStblNotFound(
+                    self.track_id(),
+                    vec![BoxType::EsdsBox],
+                ))
             }
         } else if let Some(ref opus) = self.trak.mdia.minf.stbl.stsd.opus {
             if let Some(ref dops) = opus.dops_box {
@@ -225,7 +246,10 @@ impl Mp4Track {
                 Err(Error::BoxInStblNotFound(self.track_id(), BoxType::DopsBox))
             }
         } else {
-            Err(Error::BoxInStblNotFound(self.track_id(), BoxType::Mp4aBox))
+            Err(Error::BoxInStblNotFound(
+                self.track_id(),
+                vec![BoxType::Mp4aBox],
+            ))
         }
     }
 
@@ -285,7 +309,10 @@ impl Mp4Track {
                 avc1.avcc.profile_compatibility,
             ))
         } else {
-            Err(Error::BoxInStblNotFound(self.track_id(), BoxType::Avc1Box))
+            Err(Error::BoxInStblNotFound(
+                self.track_id(),
+                vec![BoxType::Avc1Box],
+            ))
         }
     }
 
@@ -299,8 +326,15 @@ impl Mp4Track {
                     0,
                 )),
             }
+        } else if let Some(ref hev1) = self.trak.mdia.minf.stbl.stsd.hev1 {
+            hev1.hvcc.sequence_parameter_set(self.track_id())
+        } else if let Some(ref hvc1) = self.trak.mdia.minf.stbl.stsd.hvc1 {
+            hvc1.hvcc.sequence_parameter_set(self.track_id())
         } else {
-            Err(Error::BoxInStblNotFound(self.track_id(), BoxType::Avc1Box))
+            Err(Error::BoxInStblNotFound(
+                self.track_id(),
+                vec![BoxType::Avc1Box, BoxType::Hev1Box, BoxType::Hvc1Box],
+            ))
         }
     }
 
@@ -323,8 +357,28 @@ impl Mp4Track {
                     0,
                 )),
             }
+        } else if let Some(ref hev1) = self.trak.mdia.minf.stbl.stsd.hev1 {
+            hev1.hvcc.picture_parameter_set(self.track_id())
+        } else if let Some(ref hvc1) = self.trak.mdia.minf.stbl.stsd.hvc1 {
+            hvc1.hvcc.picture_parameter_set(self.track_id())
         } else {
-            Err(Error::BoxInStblNotFound(self.track_id(), BoxType::Avc1Box))
+            Err(Error::BoxInStblNotFound(
+                self.track_id(),
+                vec![BoxType::Avc1Box, BoxType::Hev1Box, BoxType::Hvc1Box],
+            ))
+        }
+    }
+
+    pub fn video_parameter_set(&self) -> Result<&[u8]> {
+        if let Some(ref hev1) = self.trak.mdia.minf.stbl.stsd.hev1 {
+            hev1.hvcc.video_parameter_set(self.track_id())
+        } else if let Some(ref hvc1) = self.trak.mdia.minf.stbl.stsd.hvc1 {
+            hvc1.hvcc.video_parameter_set(self.track_id())
+        } else {
+            Err(Error::BoxInStblNotFound(
+                self.track_id(),
+                vec![BoxType::Hev1Box, BoxType::Hvc1Box],
+            ))
         }
     }
 
@@ -333,10 +387,16 @@ impl Mp4Track {
             if let Some(ref esds) = mp4a.esds {
                 AudioObjectType::try_from(esds.es_desc.dec_config.dec_specific.profile)
             } else {
-                Err(Error::BoxInStblNotFound(self.track_id(), BoxType::EsdsBox))
+                Err(Error::BoxInStblNotFound(
+                    self.track_id(),
+                    vec![BoxType::EsdsBox],
+                ))
             }
         } else {
-            Err(Error::BoxInStblNotFound(self.track_id(), BoxType::Mp4aBox))
+            Err(Error::BoxInStblNotFound(
+                self.track_id(),
+                vec![BoxType::Mp4aBox],
+            ))
         }
     }
 
