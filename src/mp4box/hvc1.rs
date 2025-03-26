@@ -39,8 +39,8 @@ impl Hvc1Box {
     pub fn new(config: &HevcConfig) -> Self {
         Self {
             data_reference_index: 1,
-            width: config.width,
-            height: config.height,
+            width: config.width.unwrap_or(0),
+            height: config.height.unwrap_or(0),
             horizresolution: FixedPointU16::new(0x48),
             vertresolution: FixedPointU16::new(0x48),
             frame_count: 1,

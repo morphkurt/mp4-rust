@@ -784,8 +784,8 @@ impl Mp4TrackWriter {
                 trak.mdia.minf.stbl.stsd.avc1 = Some(avc1);
             }
             MediaConfig::HevcConfig(ref hevc_config) => {
-                trak.tkhd.set_width(hevc_config.width);
-                trak.tkhd.set_height(hevc_config.height);
+                trak.tkhd.set_width(hevc_config.width.unwrap_or(0));
+                trak.tkhd.set_height(hevc_config.height.unwrap_or(0));
 
                 let vmhd = VmhdBox::default();
                 trak.mdia.minf.vmhd = Some(vmhd);

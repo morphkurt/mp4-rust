@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::fmt;
 
+use crate::hev1::HvcCArray;
 use crate::mp4a::EsdsBox;
 use crate::mp4box::*;
 use crate::*;
@@ -610,10 +611,79 @@ pub struct AvcConfig {
     pub pic_param_set: Vec<u8>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct HevcConfig {
-    pub width: u16,
-    pub height: u16,
+    pub width: Option<u16>,
+    pub height: Option<u16>,
+    pub configuration_version: Option<u8>,
+    pub general_profile_space: Option<u8>,
+    pub general_tier_flag: Option<bool>,
+    pub general_profile_idc: Option<u8>,
+    pub general_profile_compatibility_flags: Option<u32>,
+    pub general_constraint_indicator_flag: Option<u64>,
+    pub general_level_idc: Option<u8>,
+    pub min_spatial_segmentation_idc: Option<u16>,
+    pub parallelism_type: Option<u8>,
+    pub chroma_format_idc: Option<u8>,
+    pub bit_depth_luma_minus8: Option<u8>,
+    pub bit_depth_chroma_minus8: Option<u8>,
+    pub avg_frame_rate: Option<u16>,
+    pub constant_frame_rate: Option<u8>,
+    pub num_temporal_layers: Option<u8>,
+    pub temporal_id_nested: Option<bool>,
+    pub length_size_minus_one: Option<u8>,
+    pub arrays: Option<Vec<HvcCArray>>,
+}
+
+impl Default for HevcConfig {
+    fn default() -> Self {
+        Self {
+            width: None,
+            height: None,
+            configuration_version: None,
+            general_profile_space: None,
+            general_tier_flag: None,
+            general_profile_idc: None,
+            general_profile_compatibility_flags: None,
+            general_constraint_indicator_flag: None,
+            general_level_idc: None,
+            min_spatial_segmentation_idc: None,
+            parallelism_type: None,
+            chroma_format_idc: None,
+            bit_depth_luma_minus8: None,
+            bit_depth_chroma_minus8: None,
+            avg_frame_rate: None,
+            constant_frame_rate: None,
+            num_temporal_layers: None,
+            temporal_id_nested: None,
+            length_size_minus_one: None,
+            arrays: None,
+        }
+    }
+}
+
+impl HevcConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    // Builder methods for each field
+    pub fn with_width(mut self, width: u16) -> Self {
+        self.width = Some(width);
+        self
+    }
+
+    pub fn with_height(mut self, height: u16) -> Self {
+        self.height = Some(height);
+        self
+    }
+
+    pub fn with_configuration_version(mut self, version: u8) -> Self {
+        self.configuration_version = Some(version);
+        self
+    }
+
+    // ... add similar methods for all other fields ...
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
