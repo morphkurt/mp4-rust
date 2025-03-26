@@ -37,7 +37,7 @@ impl Default for Hev1Box {
 
 impl Hev1Box {
     pub fn new(config: &HevcConfig) -> Self {
-        Hev1Box {
+        Self {
             data_reference_index: 1,
             width: config.width.unwrap_or(0),
             height: config.height.unwrap_or(0),
@@ -45,7 +45,26 @@ impl Hev1Box {
             vertresolution: FixedPointU16::new(0x48),
             frame_count: 1,
             depth: 0x0018,
-            hvcc: HvcCBox::new(),
+            hvcc: HvcCBox {
+                configuration_version: config.configuration_version.unwrap_or(1),
+                general_profile_space: config.general_profile_space.unwrap_or(0),
+                general_tier_flag: config.general_tier_flag.unwrap_or(false),
+                general_profile_idc: config.general_profile_idc.unwrap_or(1),
+                general_profile_compatibility_flags: config.general_profile_compatibility_flags.unwrap_or(0),
+                general_constraint_indicator_flag: config.general_constraint_indicator_flag.unwrap_or(0),
+                general_level_idc: config.general_level_idc.unwrap_or(93),
+                min_spatial_segmentation_idc: config.min_spatial_segmentation_idc.unwrap_or(0),
+                parallelism_type: config.parallelism_type.unwrap_or(0),
+                chroma_format_idc: config.chroma_format_idc.unwrap_or(1),
+                bit_depth_luma_minus8: config.bit_depth_luma_minus8.unwrap_or(0),
+                bit_depth_chroma_minus8: config.bit_depth_chroma_minus8.unwrap_or(0),
+                avg_frame_rate: config.avg_frame_rate.unwrap_or(0),
+                constant_frame_rate: config.constant_frame_rate.unwrap_or(0),
+                num_temporal_layers: config.num_temporal_layers.unwrap_or(1),
+                temporal_id_nested: config.temporal_id_nested.unwrap_or(false),
+                length_size_minus_one: config.length_size_minus_one.unwrap_or(3),
+                arrays: config.arrays.clone().unwrap_or_default(),
+            },
         }
     }
 
