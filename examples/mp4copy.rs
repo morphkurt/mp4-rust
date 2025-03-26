@@ -70,7 +70,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
                 temporal_id_nested: Some(false),
                 length_size_minus_one: Some(3),
                 arrays: Some(vec![]),
-                box_type: Some(HevcBoxType::Hev1),
+                use_hvc1: true,
             }),
             MediaType::VP9 => MediaConfig::Vp9Config(Vp9Config {
                 width: track.width(),

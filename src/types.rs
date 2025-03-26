@@ -639,7 +639,7 @@ pub struct HevcConfig {
     pub temporal_id_nested: Option<bool>,
     pub length_size_minus_one: Option<u8>,
     pub arrays: Option<Vec<HvcCArray>>,
-    pub box_type: Option<HevcBoxType>,
+    pub use_hvc1: bool,
 }
 
 impl Default for HevcConfig {
@@ -665,7 +665,7 @@ impl Default for HevcConfig {
             temporal_id_nested: None,
             length_size_minus_one: None,
             arrays: None,
-            box_type: None,
+            use_hvc1: false,
         }
     }
 }
@@ -691,8 +691,8 @@ impl HevcConfig {
         self
     }
 
-    pub fn with_box_type(mut self, box_type: HevcBoxType) -> Self {
-        self.box_type = Some(box_type);
+    pub fn with_use_hvc1(mut self, use_hvc1: bool) -> Self {
+        self.use_hvc1 = use_hvc1;
         self
     }
 

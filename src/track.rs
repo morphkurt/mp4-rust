@@ -791,15 +791,12 @@ impl Mp4TrackWriter {
                 let vmhd = VmhdBox::default();
                 trak.mdia.minf.vmhd = Some(vmhd);
 
-                match hevc_config.box_type.unwrap_or(HevcBoxType::Hev1) {
-                    HevcBoxType::Hev1 => {
-                        let hev1 = Hev1Box::new(hevc_config);
-                        trak.mdia.minf.stbl.stsd.hev1 = Some(hev1);
-                    }
-                    HevcBoxType::Hvc1 => {
-                        let hvc1 = Hvc1Box::new(hevc_config);
-                        trak.mdia.minf.stbl.stsd.hvc1 = Some(hvc1);
-                    }
+                if hevc_config.use_hvc1 {
+                    let hvc1 = Hvc1Box::new(hevc_config);
+                    trak.mdia.minf.stbl.stsd.hvc1 = Some(hvc1);
+                } else {
+                    let hev1 = Hev1Box::new(hevc_config);
+                    trak.mdia.minf.stbl.stsd.hev1 = Some(hev1);
                 }
             }
             MediaConfig::Vp9Config(ref config) => {
