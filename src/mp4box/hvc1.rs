@@ -171,35 +171,7 @@ impl<W: Write> WriteBox<&mut W> for Hvc1Box {
         writer.write_u16::<BigEndian>(self.depth)?;
         writer.write_i16::<BigEndian>(-1)?; // pre-defined
 
-        // Write the hvcc configuration data without its header
-        writer.write_u8(self.hvcc.configuration_version)?;
-        let general_profile_space = (self.hvcc.general_profile_space & 0b11) << 6;
-        let general_tier_flag = u8::from(self.hvcc.general_tier_flag) << 5;
-        let general_profile_idc = self.hvcc.general_profile_idc & 0b11111;
-        writer.write_u8(general_profile_space | general_tier_flag | general_profile_idc)?;
-        writer.write_u32::<BigEndian>(self.hvcc.general_profile_compatibility_flags)?;
-        writer.write_u48::<BigEndian>(self.hvcc.general_constraint_indicator_flag)?;
-        writer.write_u8(self.hvcc.general_level_idc)?;
-        writer.write_u16::<BigEndian>(self.hvcc.min_spatial_segmentation_idc & 0x0FFF)?;
-        writer.write_u8(self.hvcc.parallelism_type & 0b11)?;
-        writer.write_u8(self.hvcc.chroma_format_idc & 0b11)?;
-        writer.write_u8(self.hvcc.bit_depth_luma_minus8 & 0b111)?;
-        writer.write_u8(self.hvcc.bit_depth_chroma_minus8 & 0b111)?;
-        writer.write_u16::<BigEndian>(self.hvcc.avg_frame_rate)?;
-        let constant_frame_rate = (self.hvcc.constant_frame_rate & 0b11) << 6;
-        let num_temporal_layers = (self.hvcc.num_temporal_layers & 0b111) << 3;
-        let temporal_id_nested = u8::from(self.hvcc.temporal_id_nested) << 2;
-        let length_size_minus_one = self.hvcc.length_size_minus_one & 0b11;
-        writer.write_u8(constant_frame_rate | num_temporal_layers | temporal_id_nested | length_size_minus_one)?;
-        writer.write_u8(self.hvcc.arrays.len() as u8)?;
-        for arr in &self.hvcc.arrays {
-            writer.write_u8((arr.nal_unit_type & 0b111111) | u8::from(arr.completeness) << 7)?;
-            writer.write_u16::<BigEndian>(arr.nalus.len() as _)?;
-            for nalu in &arr.nalus {
-                writer.write_u16::<BigEndian>(nalu.size)?;
-                writer.write_all(&nalu.data)?;
-            }
-        }
+        self.hvcc.write_box(writer)?;
 
         Ok(size)
     }
