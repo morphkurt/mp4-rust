@@ -611,6 +611,12 @@ pub struct AvcConfig {
     pub pic_param_set: Vec<u8>,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum HevcBoxType {
+    Hev1,
+    Hvc1,
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct HevcConfig {
     pub width: Option<u16>,
@@ -633,6 +639,7 @@ pub struct HevcConfig {
     pub temporal_id_nested: Option<bool>,
     pub length_size_minus_one: Option<u8>,
     pub arrays: Option<Vec<HvcCArray>>,
+    pub box_type: Option<HevcBoxType>,
 }
 
 impl Default for HevcConfig {
@@ -658,6 +665,7 @@ impl Default for HevcConfig {
             temporal_id_nested: None,
             length_size_minus_one: None,
             arrays: None,
+            box_type: None,
         }
     }
 }
@@ -680,6 +688,11 @@ impl HevcConfig {
 
     pub fn with_configuration_version(mut self, version: u8) -> Self {
         self.configuration_version = Some(version);
+        self
+    }
+
+    pub fn with_box_type(mut self, box_type: HevcBoxType) -> Self {
+        self.box_type = Some(box_type);
         self
     }
 

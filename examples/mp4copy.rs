@@ -5,8 +5,7 @@ use std::io::{self, BufReader, BufWriter};
 use std::path::Path;
 
 use mp4::{
-    AacConfig, AvcConfig, HevcConfig, MediaConfig, MediaType, Mp4Config, OpusConfig, Result,
-    TrackConfig, TtxtConfig, Vp9Config,
+    AacConfig, AvcConfig, HevcBoxType, HevcConfig, MediaConfig, MediaType, Mp4Config, OpusConfig, Result, TrackConfig, TtxtConfig, Vp9Config
 };
 
 fn main() {
@@ -71,6 +70,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
                 temporal_id_nested: Some(false),
                 length_size_minus_one: Some(3),
                 arrays: Some(vec![]),
+                box_type: Some(HevcBoxType::Hev1),
             }),
             MediaType::VP9 => MediaConfig::Vp9Config(Vp9Config {
                 width: track.width(),

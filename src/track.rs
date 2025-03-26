@@ -5,6 +5,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::time::Duration;
 
 use crate::elst::ElstEntry;
+use crate::hvc1::Hvc1Box;
 use crate::mp4a::EsdsBox;
 use crate::mp4box::traf::TrafBox;
 use crate::mp4box::trak::TrakBox;
@@ -790,8 +791,16 @@ impl Mp4TrackWriter {
                 let vmhd = VmhdBox::default();
                 trak.mdia.minf.vmhd = Some(vmhd);
 
-                let hev1 = Hev1Box::new(hevc_config);
-                trak.mdia.minf.stbl.stsd.hev1 = Some(hev1);
+                match hevc_config.box_type.unwrap_or(HevcBoxType::Hev1) {
+                    HevcBoxType::Hev1 => {
+                        let hev1 = Hev1Box::new(hevc_config);
+                        trak.mdia.minf.stbl.stsd.hev1 = Some(hev1);
+                    }
+                    HevcBoxType::Hvc1 => {
+                        let hvc1 = Hvc1Box::new(hevc_config);
+                        trak.mdia.minf.stbl.stsd.hvc1 = Some(hvc1);
+                    }
+                }
             }
             MediaConfig::Vp9Config(ref config) => {
                 trak.tkhd.set_width(config.width);
