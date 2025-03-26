@@ -50,8 +50,12 @@ impl Hev1Box {
                 general_profile_space: config.general_profile_space.unwrap_or(0),
                 general_tier_flag: config.general_tier_flag.unwrap_or(false),
                 general_profile_idc: config.general_profile_idc.unwrap_or(1),
-                general_profile_compatibility_flags: config.general_profile_compatibility_flags.unwrap_or(0),
-                general_constraint_indicator_flag: config.general_constraint_indicator_flag.unwrap_or(0),
+                general_profile_compatibility_flags: config
+                    .general_profile_compatibility_flags
+                    .unwrap_or(0),
+                general_constraint_indicator_flag: config
+                    .general_constraint_indicator_flag
+                    .unwrap_or(0),
                 general_level_idc: config.general_level_idc.unwrap_or(93),
                 min_spatial_segmentation_idc: config.min_spatial_segmentation_idc.unwrap_or(0),
                 parallelism_type: config.parallelism_type.unwrap_or(0),
