@@ -24,7 +24,6 @@ pub struct TrackConfig {
     pub language: String,
     pub media_conf: MediaConfig,
     pub matrix: Option<Vec<i32>>,
-    pub elst_media_time: Option<i64>,
 }
 
 impl Default for TrackConfig {
@@ -35,7 +34,6 @@ impl Default for TrackConfig {
             language: String::from("und"),
             media_conf: MediaConfig::AvcConfig(AvcConfig::default()),
             matrix: None,
-            elst_media_time: None,
         }
     }
 }
@@ -61,7 +59,6 @@ impl From<AvcConfig> for TrackConfig {
             language: String::from("und"), // XXX
             media_conf: MediaConfig::AvcConfig(avc_conf),
             matrix: None,
-            elst_media_time: None,
         }
     }
 }
@@ -74,7 +71,6 @@ impl From<HevcConfig> for TrackConfig {
             language: String::from("und"), // XXX
             media_conf: MediaConfig::HevcConfig(hevc_conf),
             matrix: None,
-            elst_media_time: None,
         }
     }
 }
@@ -87,7 +83,6 @@ impl From<AacConfig> for TrackConfig {
             language: String::from("und"), // XXX
             media_conf: MediaConfig::AacConfig(aac_conf),
             matrix: None,
-            elst_media_time: None,
         }
     }
 }
@@ -100,7 +95,6 @@ impl From<TtxtConfig> for TrackConfig {
             language: String::from("und"), // XXX
             media_conf: MediaConfig::TtxtConfig(txtt_conf),
             matrix: None,
-            elst_media_time: None,
         }
     }
 }
@@ -113,7 +107,6 @@ impl From<Vp9Config> for TrackConfig {
             language: String::from("und"), // XXX
             media_conf: MediaConfig::Vp9Config(vp9_conf),
             matrix: None,
-            elst_media_time: None,
         }
     }
 }
@@ -126,7 +119,6 @@ impl From<OpusConfig> for TrackConfig {
             language: String::from("und"), // XXX
             media_conf: MediaConfig::OpusConfig(opus_conf),
             matrix: None,
-            elst_media_time: None,
         }
     }
 }
