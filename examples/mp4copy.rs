@@ -5,7 +5,7 @@ use std::io::{self, BufReader, BufWriter};
 use std::path::Path;
 
 use mp4::{
-    AacConfig, AvcConfig, HevcBoxType, HevcConfig, MediaConfig, MediaType, Mp4Config, OpusConfig,
+    AacConfig, AvcConfig, HevcConfig, MediaConfig, MediaType, Mp4Config, OpusConfig,
     Result, TrackConfig, TtxtConfig, Vp9Config,
 };
 
@@ -113,6 +113,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
             timescale: track.timescale(),
             language: track.language().to_string(),
             media_conf,
+            matrix: None,
         };
 
         mp4_writer.add_track(&track_conf)?;

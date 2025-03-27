@@ -13,7 +13,7 @@ use crate::mp4box::trun::TrunBox;
 use crate::mp4box::{
     avc1::Avc1Box, co64::Co64Box, ctts::CttsBox, ctts::CttsEntry, hev1::Hev1Box, mp4a::Mp4aBox,
     opus::OpusBox, smhd::SmhdBox, stco::StcoBox, stsc::StscEntry, stss::StssBox, stts::SttsEntry,
-    tx3g::Tx3gBox, vmhd::VmhdBox, vp09::Vp09Box,
+    tkhd::Matrix, tx3g::Tx3gBox, vmhd::VmhdBox, vp09::Vp09Box,
 };
 use crate::*;
 
@@ -23,6 +23,19 @@ pub struct TrackConfig {
     pub timescale: u32,
     pub language: String,
     pub media_conf: MediaConfig,
+    pub matrix: Option<Vec<i32>>,
+}
+
+impl Default for TrackConfig {
+    fn default() -> Self {
+        Self {
+            track_type: TrackType::Video,
+            timescale: 1000,
+            language: String::from("und"),
+            media_conf: MediaConfig::AvcConfig(AvcConfig::default()),
+            matrix: None,
+        }
+    }
 }
 
 impl From<MediaConfig> for TrackConfig {
@@ -45,6 +58,7 @@ impl From<AvcConfig> for TrackConfig {
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
             media_conf: MediaConfig::AvcConfig(avc_conf),
+            matrix: None,
         }
     }
 }
@@ -56,6 +70,7 @@ impl From<HevcConfig> for TrackConfig {
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
             media_conf: MediaConfig::HevcConfig(hevc_conf),
+            matrix: None,
         }
     }
 }
@@ -67,6 +82,7 @@ impl From<AacConfig> for TrackConfig {
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
             media_conf: MediaConfig::AacConfig(aac_conf),
+            matrix: None,
         }
     }
 }
@@ -78,6 +94,7 @@ impl From<TtxtConfig> for TrackConfig {
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
             media_conf: MediaConfig::TtxtConfig(txtt_conf),
+            matrix: None,
         }
     }
 }
@@ -89,6 +106,7 @@ impl From<Vp9Config> for TrackConfig {
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
             media_conf: MediaConfig::Vp9Config(vp9_conf),
+            matrix: None,
         }
     }
 }
@@ -100,6 +118,7 @@ impl From<OpusConfig> for TrackConfig {
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
             media_conf: MediaConfig::OpusConfig(opus_conf),
+            matrix: None,
         }
     }
 }
@@ -321,6 +340,20 @@ impl Mp4Track {
                 vec![BoxType::Avc1Box],
             ))
         }
+    }
+
+    pub fn matrix(&self) -> Vec<i32> {
+        vec![
+            self.trak.tkhd.matrix.a,
+            self.trak.tkhd.matrix.b,
+            self.trak.tkhd.matrix.u,
+            self.trak.tkhd.matrix.c,
+            self.trak.tkhd.matrix.d,
+            self.trak.tkhd.matrix.v,
+            self.trak.tkhd.matrix.x,
+            self.trak.tkhd.matrix.y,
+            self.trak.tkhd.matrix.w,
+        ]
     }
 
     pub fn sequence_parameter_set(&self) -> Result<&[u8]> {
@@ -773,6 +806,24 @@ impl Mp4TrackWriter {
         trak.mdia.hdlr.handler_type = config.track_type.into();
         trak.mdia.hdlr.name = config.track_type.into();
         trak.mdia.minf.stbl.co64 = Some(Co64Box::default());
+        
+        // Set matrix if provided in config
+        if let Some(matrix_values) = &config.matrix {
+            if matrix_values.len() == 9 {
+                trak.tkhd.matrix = Matrix {
+                    a: matrix_values[0],
+                    b: matrix_values[1],
+                    u: matrix_values[2],
+                    c: matrix_values[3],
+                    d: matrix_values[4],
+                    v: matrix_values[5],
+                    x: matrix_values[6],
+                    y: matrix_values[7],
+                    w: matrix_values[8],
+                };
+            }
+        }
+        
         match config.media_conf {
             MediaConfig::AvcConfig(ref avc_config) => {
                 trak.tkhd.set_width(avc_config.width);
