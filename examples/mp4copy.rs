@@ -114,6 +114,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
             language: track.language().to_string(),
             media_conf,
             matrix: None,
+            elst_media_time: None,
         };
 
         mp4_writer.add_track(&track_conf)?;

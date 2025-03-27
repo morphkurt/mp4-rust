@@ -17,7 +17,7 @@ pub struct ElstBox {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
 pub struct ElstEntry {
     pub segment_duration: u64,
-    pub media_time: u64,
+    pub media_time: i64,
     pub media_rate: u16,
     pub media_rate_fraction: u16,
 }
@@ -91,12 +91,12 @@ impl<R: Read + Seek> ReadBox<&mut R> for ElstBox {
             let (segment_duration, media_time) = if version == 1 {
                 (
                     reader.read_u64::<BigEndian>()?,
-                    reader.read_u64::<BigEndian>()?,
+                    reader.read_i64::<BigEndian>()?,
                 )
             } else {
                 (
                     reader.read_u32::<BigEndian>()? as u64,
-                    reader.read_u32::<BigEndian>()? as u64,
+                    reader.read_i32::<BigEndian>()? as i64,
                 )
             };
 
@@ -130,10 +130,10 @@ impl<W: Write> WriteBox<&mut W> for ElstBox {
         for entry in self.entries.iter() {
             if self.version == 1 {
                 writer.write_u64::<BigEndian>(entry.segment_duration)?;
-                writer.write_u64::<BigEndian>(entry.media_time)?;
+                writer.write_i64::<BigEndian>(entry.media_time)?;
             } else {
                 writer.write_u32::<BigEndian>(entry.segment_duration as u32)?;
-                writer.write_u32::<BigEndian>(entry.media_time as u32)?;
+                writer.write_i32::<BigEndian>(entry.media_time as i32)?;
             }
             writer.write_u16::<BigEndian>(entry.media_rate)?;
             writer.write_u16::<BigEndian>(entry.media_rate_fraction)?;
