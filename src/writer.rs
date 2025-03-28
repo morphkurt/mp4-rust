@@ -169,4 +169,8 @@ impl<W: Write + Seek> Mp4Writer<W> {
         moov.write_box(&mut self.writer)?;
         Ok(())
     }
+
+    pub fn track_ids(&self) -> Vec<u32> {
+        self.tracks.keys().cloned().collect()
+    }
 }
