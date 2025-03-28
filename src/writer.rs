@@ -1,5 +1,6 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use std::cmp;
+use std::collections::HashMap;
 use std::io::{Seek, SeekFrom, Write};
 
 use crate::mp4box::*;
@@ -17,7 +18,7 @@ pub struct Mp4Config {
 #[derive(Debug)]
 pub struct Mp4Writer<W> {
     writer: W,
-    tracks: Vec<Mp4TrackWriter>,
+    tracks: HashMap<u32, Mp4TrackWriter>,
     mdat_pos: u64,
     timescale: u32,
     duration: u64,
@@ -74,7 +75,7 @@ impl<W: Write + Seek> Mp4Writer<W> {
         BoxHeader::new(BoxType::MdatBox, HEADER_SIZE).write(&mut writer)?;
         BoxHeader::new(BoxType::WideBox, HEADER_SIZE).write(&mut writer)?;
 
-        let tracks = Vec::new();
+        let tracks: HashMap<u32, Mp4TrackWriter> = HashMap::new();
         let timescale = config.timescale;
         let duration = 0;
         Ok(Self {
@@ -89,18 +90,25 @@ impl<W: Write + Seek> Mp4Writer<W> {
     pub fn add_track(&mut self, config: &TrackConfig) -> Result<u32> {
         let track_id = self.tracks.len() as u32 + 1;
         let track = Mp4TrackWriter::new(track_id, config)?;
-        self.tracks.push(track);
-        Ok(track_id)
+
+        match self.tracks.insert(track_id, track) {
+            Some(_) => {
+                return Err(Error::InvalidData("track_id already exists"));
+            }
+            None => {
+                Ok(track_id)
+            }
+        }
     }
 
-    pub fn update_offset(&mut self, track_index: u32, offset: u64, duration_us: u64) -> Result<()> {
-        if let Some(track) = self.tracks.get_mut(track_index as usize) {
+    pub fn update_offset(&mut self, track_id: u32, offset: u64, duration_us: u64) -> Result<()> {
+        if let Some(track) = self.tracks.get_mut(&track_id) {
             //convert duration to mvhd timescale
             let duration = duration_us * self.timescale as u64 / 1_000_000;
 
             track.update_edit_list(offset, cmp::min(duration, self.duration))?
         } else {
-            return Err(Error::TrakNotFound(track_index));
+            return Err(Error::TrakNotFound(track_id));
         }
         Ok(())
     }
@@ -116,7 +124,7 @@ impl<W: Write + Seek> Mp4Writer<W> {
             return Err(Error::TrakNotFound(track_id));
         }
 
-        let track_dur = if let Some(ref mut track) = self.tracks.get_mut(track_id as usize - 1) {
+        let track_dur = if let Some(ref mut track) = self.tracks.get_mut(&track_id) {
             track.write_sample(&mut self.writer, sample, self.timescale)?
         } else {
             return Err(Error::TrakNotFound(track_id));
@@ -146,7 +154,7 @@ impl<W: Write + Seek> Mp4Writer<W> {
     pub fn write_end(&mut self) -> Result<()> {
         let mut moov = MoovBox::default();
 
-        for track in self.tracks.iter_mut() {
+        for(_, track) in self.tracks.iter_mut() {
             moov.traks.push(track.write_end(&mut self.writer)?);
         }
         self.update_mdat_size()?;
