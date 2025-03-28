@@ -87,10 +87,12 @@ impl<W: Write + Seek> Mp4Writer<W> {
         })
     }
 
-    pub fn add_track(&mut self, config: &TrackConfig) -> Result<u32> {
-        let track_id = self.tracks.len() as u32 + 1;
+    pub fn add_track(&mut self, config: &TrackConfig) -> Result<u32> {  
+        let track_id = match config.track_id {
+            Some(track_id) =>  track_id,
+            None => self.tracks.len() as u32 + 1,  
+        };  
         let track = Mp4TrackWriter::new(track_id, config)?;
-
         match self.tracks.insert(track_id, track) {
             Some(_) => {
                 return Err(Error::InvalidData("track_id already exists"));

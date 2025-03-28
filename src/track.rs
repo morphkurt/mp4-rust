@@ -19,6 +19,7 @@ use crate::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TrackConfig {
+    pub track_id: Option<u32>,
     pub track_type: TrackType,
     pub timescale: u32,
     pub language: String,
@@ -29,6 +30,7 @@ pub struct TrackConfig {
 impl Default for TrackConfig {
     fn default() -> Self {
         Self {
+            track_id: None,
             track_type: TrackType::Video,
             timescale: 1000,
             language: String::from("und"),
@@ -54,6 +56,7 @@ impl From<MediaConfig> for TrackConfig {
 impl From<AvcConfig> for TrackConfig {
     fn from(avc_conf: AvcConfig) -> Self {
         Self {
+            track_id: None,
             track_type: TrackType::Video,
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
@@ -66,6 +69,7 @@ impl From<AvcConfig> for TrackConfig {
 impl From<HevcConfig> for TrackConfig {
     fn from(hevc_conf: HevcConfig) -> Self {
         Self {
+            track_id: None,
             track_type: TrackType::Video,
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
@@ -78,6 +82,7 @@ impl From<HevcConfig> for TrackConfig {
 impl From<AacConfig> for TrackConfig {
     fn from(aac_conf: AacConfig) -> Self {
         Self {
+            track_id: None,
             track_type: TrackType::Audio,
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
@@ -90,6 +95,7 @@ impl From<AacConfig> for TrackConfig {
 impl From<TtxtConfig> for TrackConfig {
     fn from(txtt_conf: TtxtConfig) -> Self {
         Self {
+            track_id: None,
             track_type: TrackType::Subtitle,
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
@@ -102,6 +108,7 @@ impl From<TtxtConfig> for TrackConfig {
 impl From<Vp9Config> for TrackConfig {
     fn from(vp9_conf: Vp9Config) -> Self {
         Self {
+            track_id: None,
             track_type: TrackType::Video,
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX
@@ -114,6 +121,7 @@ impl From<Vp9Config> for TrackConfig {
 impl From<OpusConfig> for TrackConfig {
     fn from(opus_conf: OpusConfig) -> Self {
         Self {
+            track_id: None,
             track_type: TrackType::Audio,
             timescale: 1000,               // XXX
             language: String::from("und"), // XXX

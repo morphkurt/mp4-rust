@@ -109,6 +109,7 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
         };
 
         let track_conf = TrackConfig {
+            track_id: None,
             track_type: track.track_type()?,
             timescale: track.timescale(),
             language: track.language().to_string(),
