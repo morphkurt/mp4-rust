@@ -796,7 +796,285 @@ impl Mp4Track {
             bytes: Bytes::from(buffer),
         }))
     }
-}
+    pub(crate) fn read_all_samples<R: Read + Seek>(
+            &self,
+            reader: &mut R,
+        ) -> Result<Vec<Mp4Sample>> {
+            if !self.trafs.is_empty() {
+                return self.read_all_samples_fragmented(reader);
+            } else {
+                return self.read_all_samples_unfragmented(reader);
+            }
+        }
+    
+        // Process all samples in unfragmented MP4 files in a truly bulk manner
+        fn read_all_samples_unfragmented<R: Read + Seek>(
+            &self,
+            reader: &mut R,
+        ) -> Result<Vec<Mp4Sample>> {
+            let sample_count = self.sample_count() as usize;
+            let mut samples = Vec::with_capacity(sample_count);
+            
+            // Process each chunk - a chunk contains multiple samples
+            let stsc = &self.trak.mdia.minf.stbl.stsc;
+            let stco = &self.trak.mdia.minf.stbl.stco;
+            let co64 = &self.trak.mdia.minf.stbl.co64;
+            let stsz = &self.trak.mdia.minf.stbl.stsz;
+            let stts = &self.trak.mdia.minf.stbl.stts;
+            
+            // 1. Pre-compute all sample sizes (either fixed or variable)
+            let sample_sizes = if stsz.sample_size > 0 {
+                // Fixed sample size for all samples
+                vec![stsz.sample_size; sample_count]
+            } else {
+                // Get all sizes at once from the stsz table
+                stsz.sample_sizes.clone()
+            };
+            
+            // 2. Pre-compute all sample times (decode timestamps and durations)
+            let mut sample_times = Vec::with_capacity(sample_count);
+            let mut elapsed_time = 0u64;
+            let mut sample_idx = 0;
+            
+            for entry in &stts.entries {
+                for _ in 0..entry.sample_count {
+                    let start_time = elapsed_time;
+                    elapsed_time += entry.sample_delta as u64;
+                    sample_times.push((start_time, entry.sample_delta));
+                    
+                    sample_idx += 1;
+                    if sample_idx >= sample_count {
+                        break;
+                    }
+                }
+                if sample_idx >= sample_count {
+                    break;
+                }
+            }
+            
+            // 3. Pre-compute all rendering offsets (composition timestamps)
+            let mut rendering_offsets = vec![0i32; sample_count];
+            if let Some(ref ctts) = self.trak.mdia.minf.stbl.ctts {
+                let mut sample_idx = 0;
+                for entry in &ctts.entries {
+                    for _ in 0..entry.sample_count {
+                        if sample_idx < sample_count {
+                            rendering_offsets[sample_idx] = entry.sample_offset;
+                            sample_idx += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    if sample_idx >= sample_count {
+                        break;
+                    }
+                }
+            }
+            
+            // 4. Pre-compute sync sample flags
+            let mut is_sync = vec![true; sample_count]; // Default: all samples are sync samples
+            if let Some(ref stss) = self.trak.mdia.minf.stbl.stss {
+                // Only samples in stss are sync samples
+                is_sync = vec![false; sample_count];
+                for &sync_sample_id in &stss.entries {
+                    if (sync_sample_id as usize) <= sample_count {
+                        is_sync[sync_sample_id as usize - 1] = true;
+                    }
+                }
+            }
+            
+            // 5. Process all chunks and their samples
+            let mut current_sample = 0;
+            let mut chunk_index = 0;
+            
+            // For each chunk description in stsc
+            for i in 0..stsc.entries.len() {
+                let stsc_entry = &stsc.entries[i];
+                let first_chunk = stsc_entry.first_chunk as usize;
+                let samples_per_chunk = stsc_entry.samples_per_chunk as usize;
+                
+                let last_chunk = if i + 1 < stsc.entries.len() {
+                    stsc.entries[i + 1].first_chunk as usize - 1
+                } else {
+                    // Determine the total number of chunks
+                    if let Some(ref stco) = stco {
+                        stco.entries.len() + 1
+                    } else if let Some(ref co64) = co64 {
+                        co64.entries.len() + 1
+                    } else {
+                        return Err(Error::Box2NotFound(BoxType::StcoBox, BoxType::Co64Box));
+                    }
+                };
+                
+                // Process each chunk in this range
+                for chunk_id in first_chunk..=last_chunk {
+                    let chunk_offset = if let Some(ref stco) = stco {
+                        if chunk_id <= stco.entries.len() {
+                            stco.entries[chunk_id - 1] as u64
+                        } else {
+                            return Err(Error::EntryInStblNotFound(
+                                self.track_id(),
+                                BoxType::StcoBox,
+                                chunk_id as u32,
+                            ));
+                        }
+                    } else if let Some(ref co64) = co64 {
+                        if chunk_id <= co64.entries.len() {
+                            co64.entries[chunk_id - 1]
+                        } else {
+                            return Err(Error::EntryInStblNotFound(
+                                self.track_id(),
+                                BoxType::Co64Box,
+                                chunk_id as u32,
+                            ));
+                        }
+                    } else {
+                        return Err(Error::Box2NotFound(BoxType::StcoBox, BoxType::Co64Box));
+                    };
+                    
+                    // Process all samples in this chunk
+                    let mut offset = chunk_offset;
+                    for s in 0..samples_per_chunk {
+                        if current_sample >= sample_count {
+                            break;
+                        }
+                        
+                        let sample_size = sample_sizes[current_sample];
+                        
+                        // Read the sample data
+                        let mut buffer = vec![0u8; sample_size as usize];
+                        reader.seek(SeekFrom::Start(offset))?;
+                        reader.read_exact(&mut buffer)?;
+                        
+                        // Add the sample with all its metadata
+                        samples.push(Mp4Sample {
+                            start_time: sample_times[current_sample].0,
+                            duration: sample_times[current_sample].1,
+                            rendering_offset: rendering_offsets[current_sample],
+                            is_sync: is_sync[current_sample],
+                            bytes: Bytes::from(buffer),
+                        });
+                        
+                        offset += sample_size as u64;
+                        current_sample += 1;
+                    }
+                    
+                    chunk_index += 1;
+                }
+            }
+            
+            Ok(samples)
+        }
+        
+        // Process all samples in fragmented MP4 files in a bulk manner where possible
+        fn read_all_samples_fragmented<R: Read + Seek>(
+            &self,
+            reader: &mut R,
+        ) -> Result<Vec<Mp4Sample>> {
+            let mut samples = Vec::new();
+            let default_sample_duration = self.default_sample_duration;
+            
+            // Process each traf (track fragment)
+            for (traf_idx, traf) in self.trafs.iter().enumerate() {
+                if let Some(trun) = &traf.trun {
+                    let sample_count = trun.sample_count as usize;
+                    let mut base_data_offset = traf.tfhd.base_data_offset.unwrap_or(self.moof_offsets[traf_idx]);
+                    let mut base_media_time = 0u64;
+                    
+                    if let Some(tfdt) = &traf.tfdt {
+                        base_media_time = tfdt.base_media_decode_time;
+                    }
+                    
+                    // Apply data offset if present
+                    if let Some(data_offset) = trun.data_offset {
+                        base_data_offset = base_data_offset.checked_add_signed(data_offset as i64)
+                            .ok_or(Error::InvalidData("attempt to calculate trun sample offset with overflow"))?;
+                    }
+                    
+                    // Determine if we have per-sample durations
+                    let has_sample_durations = TrunBox::FLAG_SAMPLE_DURATION & trun.flags != 0;
+                    let has_sample_sizes = TrunBox::FLAG_SAMPLE_SIZE & trun.flags != 0;
+                    let has_sample_cts = TrunBox::FLAG_SAMPLE_CTS & trun.flags != 0;
+                    
+                    // Process all samples in this trun at once if possible
+                    let mut current_offset = base_data_offset;
+                    let mut current_time = base_media_time;
+                    
+                    // If all samples have the same size, read them in one batch
+                    if !has_sample_sizes && !has_sample_durations && !has_sample_cts {
+                        // All samples have the same properties
+                        let sample_size = traf.tfhd.default_sample_size.unwrap_or(0);
+                        let sample_duration = traf.tfhd.default_sample_duration.unwrap_or(default_sample_duration);
+                        
+                        // Read all sample data at once
+                        let total_size = sample_size as usize * sample_count;
+                        let mut buffer = vec![0u8; total_size];
+                        reader.seek(SeekFrom::Start(current_offset))?;
+                        reader.read_exact(&mut buffer)?;
+                        
+                        // Create samples with the read data
+                        for i in 0..sample_count {
+                            let start = i * sample_size as usize;
+                            let end = start + sample_size as usize;
+                            let sample_bytes = buffer[start..end].to_vec();
+                            
+                            samples.push(Mp4Sample {
+                                start_time: current_time + (i as u64 * sample_duration as u64),
+                                duration: sample_duration,
+                                rendering_offset: 0,
+                                is_sync: i == 0, // First sample in fragment is typically a sync sample
+                                bytes: Bytes::from(sample_bytes),
+                            });
+                        }
+                    } else {
+                        // Samples have varying properties, process individually but still optimize reads
+                        for i in 0..sample_count {
+                            // Get sample size
+                            let sample_size = if has_sample_sizes {
+                                trun.sample_sizes.get(i).copied().unwrap_or(0)
+                            } else {
+                                traf.tfhd.default_sample_size.unwrap_or(0)
+                            };
+                            
+                            // Get sample duration
+                            let sample_duration = if has_sample_durations {
+                                trun.sample_durations.get(i).copied().unwrap_or(default_sample_duration)
+                            } else {
+                                traf.tfhd.default_sample_duration.unwrap_or(default_sample_duration)
+                            };
+                            
+                            // Get composition time offset
+                            let rendering_offset = if has_sample_cts {
+                                trun.sample_cts.get(i).copied().unwrap_or(0) as i32
+                            } else {
+                                0
+                            };
+                            
+                            // Read the sample data
+                            let mut buffer = vec![0u8; sample_size as usize];
+                            reader.seek(SeekFrom::Start(current_offset))?;
+                            reader.read_exact(&mut buffer)?;
+                            
+                            samples.push(Mp4Sample {
+                                start_time: current_time,
+                                duration: sample_duration,
+                                rendering_offset,
+                                is_sync: i == 0, // First sample in fragment is typically a sync sample
+                                bytes: Bytes::from(buffer),
+                            });
+                            
+                            // Update positions for next sample
+                            current_offset += sample_size as u64;
+                            current_time += sample_duration as u64;
+                        }
+                    }
+                }
+            }
+            
+            Ok(samples)
+        }
+    }
+
 
 // TODO creation_time, modification_time
 #[derive(Debug, Default)]
@@ -825,7 +1103,7 @@ impl Mp4TrackWriter {
         trak.mdia.hdlr.handler_type = config.track_type.into();
         trak.mdia.hdlr.name = config.track_type.into();
         trak.mdia.minf.stbl.co64 = Some(Co64Box::default());
-        
+
         // Set matrix if provided in config
         if let Some(matrix_values) = &config.matrix {
             if matrix_values.len() == 9 {
@@ -842,7 +1120,7 @@ impl Mp4TrackWriter {
                 };
             }
         }
-        
+
         match config.media_conf {
             MediaConfig::AvcConfig(ref avc_config) => {
                 trak.tkhd.set_width(avc_config.width);
