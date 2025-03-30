@@ -270,6 +270,14 @@ impl<R: Read + Seek> Mp4Reader<R> {
         }
     }
 
+    pub fn read_all_samples(&mut self, track_id: u32) -> Result<Vec<Mp4Sample>> {
+        if let Some(track) = self.tracks.get(&track_id) {
+            track.read_all_samples(&mut self.reader)
+        } else {
+            Err(Error::TrakNotFound(track_id))
+        }
+    }
+
     
 
     pub fn read_sample_metadata(
