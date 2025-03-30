@@ -898,9 +898,9 @@ impl Mp4Track {
                 } else {
                     // Determine the total number of chunks
                     if let Some(ref stco) = stco {
-                        stco.entries.len() + 1
+                        stco.entries.len()
                     } else if let Some(ref co64) = co64 {
-                        co64.entries.len() + 1
+                        co64.entries.len()
                     } else {
                         return Err(Error::Box2NotFound(BoxType::StcoBox, BoxType::Co64Box));
                     }
