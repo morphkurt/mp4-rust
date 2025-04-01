@@ -803,22 +803,20 @@ impl Mp4Track {
             bytes,
         }))
     }
-    pub(crate) fn read_all_samples<R: Read + Seek>(
+    pub(crate) fn read_all_samples(
         &self,
-        reader: &mut R,
-    ) -> Result<Vec<Mp4Sample>> {
+    ) -> Result<Vec<Mp4SampleNoBytes>> {
         if !self.trafs.is_empty() {
-            return self.read_all_samples_fragmented(reader);
+            return self.read_all_samples_fragmented();
         } else {
-            return self.read_all_samples_unfragmented(reader);
+            return self.read_all_samples_unfragmented();
         }
     }
 
     // Process all samples in unfragmented MP4 files in a truly bulk manner
-    fn read_all_samples_unfragmented<R: Read + Seek>(
+    fn read_all_samples_unfragmented(
         &self,
-        reader: &mut R,
-    ) -> Result<Vec<Mp4Sample>> {
+    ) -> Result<Vec<Mp4SampleNoBytes>> {
         let sample_count = self.sample_count() as usize;
         let mut samples = Vec::with_capacity(sample_count);
 
@@ -946,23 +944,16 @@ impl Mp4Track {
                         break;
                     }
                     let sample_size = sample_sizes[current_sample];
-                    // Create a buffer for reading sample data
-                    let mut buffer = BytesMut::with_capacity(sample_size as usize);
-                    buffer.resize(sample_size as usize, 0u8);
-
-                    reader.seek(SeekFrom::Start(offset))?;
-                    reader.read_exact(&mut buffer)?;
-
-                    // Use Cow<Bytes> to wrap the buffer and avoid unnecessary cloning
-                    let bytes: Cow<Bytes> = Cow::Owned(buffer.freeze()); // Convert BytesMut to Bytes
+                  
 
                     // Add the sample with all its metadata
-                    samples.push(Mp4Sample {
+                    samples.push(Mp4SampleNoBytes {
                         start_time: sample_times[current_sample].0,
                         duration: sample_times[current_sample].1,
                         rendering_offset: rendering_offsets[current_sample],
                         is_sync: is_sync[current_sample],
-                        bytes,
+                        bytes_start: offset,
+                        bytes_end: offset + sample_size as u64,
                     });
                     offset += sample_size as u64;
                     current_sample += 1;
@@ -976,10 +967,9 @@ impl Mp4Track {
     }
 
     // Process all samples in fragmented MP4 files in a bulk manner where possible
-    fn read_all_samples_fragmented<R: Read + Seek>(
+    fn read_all_samples_fragmented(
         &self,
-        reader: &mut R,
-    ) -> Result<Vec<Mp4Sample>> {
+    ) -> Result<Vec<Mp4SampleNoBytes>> {
         let mut samples = Vec::new();
         let default_sample_duration = self.default_sample_duration;
 
@@ -1026,22 +1016,13 @@ impl Mp4Track {
 
                     // Create samples with the read data
                     for i in 0..sample_count {
-                        // Create a buffer for reading sample data
-                        let mut buffer = BytesMut::with_capacity(sample_size as usize);
-                        buffer.resize(sample_size as usize, 0u8);
-
-                        reader.seek(SeekFrom::Start(current_offset))?;
-                        reader.read_exact(&mut buffer)?;
-
-                        // Use Cow<Bytes> to wrap the buffer and avoid unnecessary cloning
-                        let bytes: Cow<Bytes> = Cow::Owned(buffer.freeze()); // Convert BytesMut to Bytes
-
-                        samples.push(Mp4Sample {
+                        samples.push(Mp4SampleNoBytes {
                             start_time: current_time + (i as u64 * sample_duration as u64),
                             duration: sample_duration,
                             rendering_offset: 0,
                             is_sync: i == 0, // First sample in fragment is typically a sync sample
-                            bytes,
+                            bytes_start: current_offset,
+                            bytes_end: current_offset + sample_size as u64,
                         });
                     }
                 } else {
@@ -1073,22 +1054,13 @@ impl Mp4Track {
                             0
                         };
 
-                        // Create a buffer for reading sample data
-                        let mut buffer = BytesMut::with_capacity(sample_size as usize);
-                        buffer.resize(sample_size as usize, 0u8);
-
-                        reader.seek(SeekFrom::Start(current_offset))?;
-                        reader.read_exact(&mut buffer)?;
-
-                        // Use Cow<Bytes> to wrap the buffer and avoid unnecessary cloning
-                        let bytes: Cow<Bytes> = Cow::Owned(buffer.freeze()); // Convert BytesMut to Bytes
-
-                        samples.push(Mp4Sample {
-                            start_time: current_time,
+                        samples.push(Mp4SampleNoBytes {
+                            start_time: current_time + (i as u64 * sample_duration as u64),
                             duration: sample_duration,
                             rendering_offset,
                             is_sync: i == 0, // First sample in fragment is typically a sync sample
-                            bytes,
+                            bytes_start: current_offset,
+                            bytes_end: current_offset + sample_size as u64,
                         });
 
                         // Update positions for next sample
@@ -1336,6 +1308,30 @@ impl Mp4TrackWriter {
         self.chunk_samples += 1;
         self.chunk_duration += sample.duration;
         self.update_sample_sizes(sample.bytes.len() as u32);
+        self.update_sample_times(sample.duration);
+        self.update_rendering_offsets(sample.rendering_offset);
+        self.update_sync_samples(sample.is_sync);
+        if self.is_chunk_full() {
+            self.write_chunk(writer)?;
+        }
+        self.update_durations(sample.duration, movie_timescale);
+
+        self.sample_id += 1;
+
+        Ok(self.trak.tkhd.duration)
+    }
+
+    pub(crate) fn write_sample_with_offset<W: Write + Seek>(
+        &mut self,
+        writer: &mut W,
+        sample: &Mp4SampleNoBytes,
+        bytes: &[u8],
+        movie_timescale: u32,
+    ) -> Result<u64> {
+        self.chunk_buffer.extend_from_slice(bytes);
+        self.chunk_samples += 1;
+        self.chunk_duration += sample.duration;
+        self.update_sample_sizes(bytes.len() as u32);
         self.update_sample_times(sample.duration);
         self.update_rendering_offsets(sample.rendering_offset);
         self.update_sync_samples(sample.is_sync);

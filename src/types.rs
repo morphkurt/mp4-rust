@@ -890,6 +890,15 @@ pub struct BytesInfo {
     pub location: Option<(u64, u32)>,
 }
 
+pub struct Mp4SampleNoBytes {
+    pub start_time: u64,
+    pub duration: u32,
+    pub rendering_offset: i32,
+    pub is_sync: bool,
+    pub bytes_start: u64,
+    pub bytes_end: u64,
+}
+
 #[derive(Debug)]
 pub struct Mp4Sample {
     pub start_time: u64,

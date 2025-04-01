@@ -270,9 +270,9 @@ impl<R: Read + Seek> Mp4Reader<R> {
         }
     }
 
-    pub fn read_all_samples(&mut self, track_id: u32) -> Result<Vec<Mp4Sample>> {
+    pub fn read_all_samples(&mut self, track_id: u32) -> Result<Vec<Mp4SampleNoBytes>> {
         if let Some(track) = self.tracks.get(&track_id) {
-            track.read_all_samples(&mut self.reader)
+            track.read_all_samples()
         } else {
             Err(Error::TrakNotFound(track_id))
         }
