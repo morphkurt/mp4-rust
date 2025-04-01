@@ -719,7 +719,7 @@ impl Mp4Track {
 
     fn closest_sync_sample(&self, sample_id: u32) -> Result<(u32)> {
         // iterate from sample_id to 0
-        for i in (0..sample_id).rev() {
+        for i in (0..sample_id+1).rev() {
             if self.is_sync_sample(i) {
                 return Ok(i);
             }
