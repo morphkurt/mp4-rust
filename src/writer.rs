@@ -135,6 +135,23 @@ impl<W: Write + Seek> Mp4Writer<W> {
         Ok(())
     }
 
+    pub fn write_sample_with_offset(&mut self, track_id: u32, sample: &Mp4SampleNoBytes, bytes: &[u8]) -> Result<()> {
+        if track_id == 0 {
+            return Err(Error::TrakNotFound(track_id));
+        }
+
+        let track_dur = if let Some(ref mut track) = self.tracks.get_mut(&track_id) {
+            track.write_sample_with_offset(&mut self.writer, sample, bytes, self.timescale)?
+        } else {
+            return Err(Error::TrakNotFound(track_id));
+        };
+
+        self.update_durations(track_dur);
+
+        Ok(())
+    }
+
+
     fn update_mdat_size(&mut self) -> Result<()> {
         let mdat_end = self.writer.stream_position()?;
         let mdat_size = mdat_end - self.mdat_pos;
