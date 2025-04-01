@@ -87,19 +87,17 @@ impl<W: Write + Seek> Mp4Writer<W> {
         })
     }
 
-    pub fn add_track(&mut self, config: &TrackConfig) -> Result<u32> {  
+    pub fn add_track(&mut self, config: &TrackConfig) -> Result<u32> {
         let track_id = match config.track_id {
-            Some(track_id) =>  track_id,
-            None => self.tracks.len() as u32 + 1,  
-        };  
+            Some(track_id) => track_id,
+            None => self.tracks.len() as u32 + 1,
+        };
         let track = Mp4TrackWriter::new(track_id, config)?;
         match self.tracks.insert(track_id, track) {
             Some(_) => {
                 return Err(Error::InvalidData("track_id already exists"));
             }
-            None => {
-                Ok(track_id)
-            }
+            None => Ok(track_id),
         }
     }
 
@@ -156,7 +154,7 @@ impl<W: Write + Seek> Mp4Writer<W> {
     pub fn write_end(&mut self) -> Result<()> {
         let mut moov = MoovBox::default();
 
-        for(_, track) in self.tracks.iter_mut() {
+        for (_, track) in self.tracks.iter_mut() {
             moov.traks.push(track.write_end(&mut self.writer)?);
         }
         self.update_mdat_size()?;

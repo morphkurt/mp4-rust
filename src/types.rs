@@ -887,7 +887,7 @@ pub enum MediaConfig {
 #[derive(Debug)]
 pub struct BytesInfo {
     pub bytes: Option<Bytes>,
-    pub location: Option<(u64,u32)>,
+    pub location: Option<(u64, u32)>,
 }
 
 #[derive(Debug)]
@@ -896,7 +896,7 @@ pub struct Mp4Sample {
     pub duration: u32,
     pub rendering_offset: i32,
     pub is_sync: bool,
-    pub bytes: Bytes,
+    pub bytes: Cow<'static, Bytes>, // Using Cow<Bytes> instead of just Bytes
 }
 
 #[derive(Debug)]
@@ -907,17 +907,17 @@ pub struct Mp4SampleMetadata {
     pub is_sync: bool,
 }
 
-    impl BytesInfo {
-        pub fn len(&self) -> usize {
-            match &self.bytes {
-                Some(bytes) => bytes.len(),  // If bytes are present, return their length
-                None => match &self.location {
-                    Some(location) => location.1 as usize,  // If location is present, use the second value (size)
-                    None => 0,  // If both are None, return 0
-                },
-            }
+impl BytesInfo {
+    pub fn len(&self) -> usize {
+        match &self.bytes {
+            Some(bytes) => bytes.len(), // If bytes are present, return their length
+            None => match &self.location {
+                Some(location) => location.1 as usize, // If location is present, use the second value (size)
+                None => 0,                             // If both are None, return 0
+            },
         }
     }
+}
 
 impl PartialEq for Mp4Sample {
     fn eq(&self, other: &Self) -> bool {

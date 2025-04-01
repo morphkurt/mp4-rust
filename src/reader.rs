@@ -278,8 +278,6 @@ impl<R: Read + Seek> Mp4Reader<R> {
         }
     }
 
-    
-
     pub fn read_sample_metadata(
         &mut self,
         track_id: u32,

@@ -2,6 +2,7 @@ use mp4::{
     AudioObjectType, AvcProfile, ChannelConfig, MediaType, Metadata, Mp4Reader, SampleFreqIndex,
     TrackType,
 };
+use std::borrow::Cow;
 use std::fs::{self, File};
 use std::io::BufReader;
 use std::time::Duration;
@@ -43,7 +44,7 @@ fn test_read_mp4() {
             duration: 512,
             rendering_offset: 0,
             is_sync: true,
-            bytes: mp4::Bytes::from(vec![0x0u8; 751]),
+            bytes: Cow::Owned(mp4::Bytes::from(vec![0x0u8; 751])),
         }
     );
     let eos = mp4.read_sample(1, 2).unwrap();
@@ -60,7 +61,7 @@ fn test_read_mp4() {
             duration: 1024,
             rendering_offset: 0,
             is_sync: true,
-            bytes: mp4::Bytes::from(vec![0x0u8; 179]),
+            bytes: Cow::Owned(mp4::Bytes::from(vec![0x0u8; 179])),
         }
     );
 
@@ -72,7 +73,7 @@ fn test_read_mp4() {
             duration: 1024,
             rendering_offset: 0,
             is_sync: true,
-            bytes: mp4::Bytes::from(vec![0x0u8; 180]),
+            bytes: Cow::Owned(mp4::Bytes::from(vec![0x0u8; 180])),
         }
     );
 
@@ -84,7 +85,7 @@ fn test_read_mp4() {
             duration: 896,
             rendering_offset: 0,
             is_sync: true,
-            bytes: mp4::Bytes::from(vec![0x0u8; 160]),
+            bytes: Cow::Owned(mp4::Bytes::from(vec![0x0u8; 160])),
         }
     );
 
@@ -203,7 +204,7 @@ fn test_read_fragments() {
             duration: 512,
             rendering_offset: 0,
             is_sync: true,
-            bytes: mp4::Bytes::from(vec![0x0u8; 751]),
+            bytes: Cow::Owned(mp4::Bytes::from(vec![0x0u8; 751])),
         }
     );
     let eos = mp4_fragment.read_sample(1, 2);
