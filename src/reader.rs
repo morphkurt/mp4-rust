@@ -270,6 +270,14 @@ impl<R: Read + Seek> Mp4Reader<R> {
         }
     }
 
+    pub fn trim_sample_id_offset(&mut self, track_id: u32, wanted_sample_time: u64) -> Result<(u64, u64)> {
+        if let Some(track) = self.tracks.get_mut(&track_id) {
+            track.trim_sample_id_offset(wanted_sample_time)
+        } else {
+            Err(Error::TrakNotFound(track_id))
+        }
+    }
+
     pub fn read_sample_metadata(
         &mut self,
         track_id: u32,

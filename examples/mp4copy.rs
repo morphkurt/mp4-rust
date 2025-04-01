@@ -5,8 +5,8 @@ use std::io::{self, BufReader, BufWriter};
 use std::path::Path;
 
 use mp4::{
-    AacConfig, AvcConfig, HevcConfig, MediaConfig, MediaType, Mp4Config, OpusConfig,
-    Result, TrackConfig, TtxtConfig, Vp9Config,
+    AacConfig, AvcConfig, HevcConfig, MediaConfig, MediaType, Mp4Config, OpusConfig, Result,
+    TrackConfig, TtxtConfig, Vp9Config,
 };
 
 fn main() {

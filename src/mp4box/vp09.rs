@@ -59,7 +59,7 @@ impl Vp09Box {
                 color_primaries: config.color_primaries,
                 transfer_characteristics: config.transfer_characteristics,
                 matrix_coefficients: config.matrix_coefficients,
-                codec_initialization_data_size: config .codec_initialization_data_size,
+                codec_initialization_data_size: config.codec_initialization_data_size,
             },
         }
     }

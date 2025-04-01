@@ -660,6 +660,80 @@ impl Mp4Track {
         }
     }
 
+    fn sample_time_to_sample_id(&self, wanted_sample_time: u64) -> Result<(u64, u64)> {
+        if self.trafs.is_empty() {
+            let mut elapsed = 0;
+            let mut sample_id: u64 = 0;
+            for (_, entry) in self.trak.mdia.minf.stbl.stts.entries.iter().enumerate() {
+                if wanted_sample_time
+                    <= elapsed + (entry.sample_count as u64 * entry.sample_delta as u64)
+                {
+                    let sample_id_delta =
+                        (wanted_sample_time - elapsed) / entry.sample_delta as u64;
+                    return Ok((
+                        sample_id + sample_id_delta,
+                        elapsed + sample_id_delta * entry.sample_delta as u64,
+                    ));
+                }
+                elapsed += entry.sample_count as u64 * entry.sample_delta as u64;
+                sample_id += entry.sample_count as u64;
+            }
+        } else {
+            let mut trun_idx = 0;
+            let mut sample_global_idx: u64 = 0;
+            let mut trun_base_media_decode_time = 0;
+            for (i, traf) in self.trafs.iter().enumerate() {
+                let base_media_decode_time = {
+                    match traf.tfdt.as_ref() {
+                        Some(tfdt) => tfdt.base_media_decode_time,
+                        None => 0,
+                    }
+                };
+                if wanted_sample_time < base_media_decode_time {
+                    trun_idx = i - 1;
+                    break;
+                }
+                trun_base_media_decode_time = base_media_decode_time;
+                sample_global_idx += traf.trun.as_ref().unwrap().sample_count as u64;
+            }
+            trun_idx = trun_idx.clamp(0, self.trafs.len() - 1);
+            let containing_trun = self.trafs[trun_idx].trun.as_ref().unwrap();
+            if TrunBox::FLAG_SAMPLE_DURATION & containing_trun.flags != 0 {
+                for (i, sample_duration) in containing_trun.sample_durations.iter().enumerate() {
+                    if wanted_sample_time <= trun_base_media_decode_time + i as u64 * (*sample_duration as u64)
+                    {
+                        return Ok((
+                            sample_global_idx + i as u64,
+                            trun_base_media_decode_time + i as u64 * (*sample_duration as u64),
+                        ));
+                    }
+                }
+            } else {
+                let samples = (wanted_sample_time - trun_base_media_decode_time )/ self.default_sample_duration as u64;
+                let duration = samples * self.default_sample_duration as u64;
+                return Ok((sample_global_idx + samples, duration));
+            }
+        }
+        Err(Error::InvalidData("sample id is outside of the track"))
+    }
+
+    fn closest_sync_sample(&self, sample_id: u32) -> Result<(u32)> {
+        // iterate from sample_id to 0
+        for i in (0..sample_id).rev() {
+            if self.is_sync_sample(i) {
+                return Ok(i);
+            }
+        }
+        Err(Error::InvalidData("no sync sample found"))
+    }
+    
+    pub fn trim_sample_id_offset(&self, wanted_sample_time: u64) -> Result<(u64, u64)> {
+        let (start_sample_id, _) = self.sample_time_to_sample_id(wanted_sample_time)?;
+        let sync_sample = self.closest_sync_sample(start_sample_id as u32)?;
+        let (sync_sample_start_time, _) = self.sample_time(sync_sample)?;
+        Ok((sync_sample as u64, (wanted_sample_time - sync_sample_start_time).min(0)))
+    }
+    
     fn sample_time(&self, sample_id: u32) -> Result<(u64, u32)> {
         if !self.trafs.is_empty() {
             let mut base_start_time = 0;
@@ -825,7 +899,7 @@ impl Mp4TrackWriter {
         trak.mdia.hdlr.handler_type = config.track_type.into();
         trak.mdia.hdlr.name = config.track_type.into();
         trak.mdia.minf.stbl.co64 = Some(Co64Box::default());
-        
+
         // Set matrix if provided in config
         if let Some(matrix_values) = &config.matrix {
             if matrix_values.len() == 9 {
@@ -842,7 +916,7 @@ impl Mp4TrackWriter {
                 };
             }
         }
-        
+
         match config.media_conf {
             MediaConfig::AvcConfig(ref avc_config) => {
                 trak.tkhd.set_width(avc_config.width);
