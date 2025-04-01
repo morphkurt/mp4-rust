@@ -703,6 +703,15 @@ impl HevcConfig {
 pub struct Vp9Config {
     pub width: u16,
     pub height: u16,
+    pub profile: u8,
+    pub level: u8,
+    pub bit_depth: u8,
+    pub chroma_subsampling: u8,
+    pub video_full_range_flag: bool,
+    pub color_primaries: u8,
+    pub transfer_characteristics: u8,
+    pub matrix_coefficients: u8,
+    pub codec_initialization_data_size: u16,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

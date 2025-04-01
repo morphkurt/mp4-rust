@@ -76,6 +76,15 @@ fn copy<P: AsRef<Path>>(src_filename: &P, dst_filename: &P) -> Result<()> {
             MediaType::VP9 => MediaConfig::Vp9Config(Vp9Config {
                 width: track.width(),
                 height: track.height(),
+                profile: 0,
+                level: 0,
+                bit_depth: 0,
+                chroma_subsampling: 0,
+                video_full_range_flag: false,
+                color_primaries: 0,
+                transfer_characteristics: 0,
+                matrix_coefficients: 0,
+                codec_initialization_data_size: 0,
             }),
             MediaType::AAC => {
                 let default_aac_config = AacConfig::default();

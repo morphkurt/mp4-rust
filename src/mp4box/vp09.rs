@@ -51,15 +51,15 @@ impl Vp09Box {
             vpcc: VpccBox {
                 version: VpccBox::DEFAULT_VERSION,
                 flags: 0,
-                profile: 0,
-                level: 0x1F,
-                bit_depth: VpccBox::DEFAULT_BIT_DEPTH,
-                chroma_subsampling: 0,
-                video_full_range_flag: false,
-                color_primaries: 0,
-                transfer_characteristics: 0,
-                matrix_coefficients: 0,
-                codec_initialization_data_size: 0,
+                profile: config.profile,
+                level: config.level,
+                bit_depth: config.bit_depth,
+                chroma_subsampling: config.chroma_subsampling,
+                video_full_range_flag: config.video_full_range_flag,
+                color_primaries: config.color_primaries,
+                transfer_characteristics: config.transfer_characteristics,
+                matrix_coefficients: config.matrix_coefficients,
+                codec_initialization_data_size: config .codec_initialization_data_size,
             },
         }
     }
@@ -189,6 +189,15 @@ mod tests {
         let src_box = Vp09Box::new(&Vp9Config {
             width: 1920,
             height: 1080,
+            profile: 0,
+            level: 0,
+            bit_depth: 0,
+            chroma_subsampling: 0,
+            video_full_range_flag: false,
+            color_primaries: 0,
+            transfer_characteristics: 0,
+            matrix_coefficients: 0,
+            codec_initialization_data_size: 0,
         });
         let mut buf = Vec::new();
         src_box.write_box(&mut buf).unwrap();
