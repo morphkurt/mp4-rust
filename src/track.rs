@@ -663,7 +663,7 @@ impl Mp4Track {
     fn sample_time_to_sample_id(&self, wanted_sample_time: u64) -> Result<(u64, u64)> {
         if self.trafs.is_empty() {
             let mut elapsed = 0;
-            let mut sample_id: u64 = 0;
+            let mut sample_id: u64 = 1;
             for (_, entry) in self.trak.mdia.minf.stbl.stts.entries.iter().enumerate() {
                 if wanted_sample_time
                     <= elapsed + (entry.sample_count as u64 * entry.sample_delta as u64)
@@ -719,7 +719,7 @@ impl Mp4Track {
 
     fn closest_sync_sample(&self, sample_id: u32) -> Result<(u32)> {
         // iterate from sample_id to 0
-        for i in (0..sample_id+1).rev() {
+        for i in (0..sample_id).rev() {
             if self.is_sync_sample(i) {
                 return Ok(i);
             }
