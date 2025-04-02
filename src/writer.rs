@@ -170,6 +170,22 @@ impl<W: Write + Seek> Mp4Writer<W> {
         Ok(())
     }
 
+    pub fn write_end_no_mdat_update(&mut self) -> Result<()> {
+        let mut moov = MoovBox::default();
+
+        for(_, track) in self.tracks.iter_mut() {
+            moov.traks.push(track.write_end(&mut self.writer)?);
+        }
+
+        moov.mvhd.timescale = self.timescale;
+        moov.mvhd.duration = self.duration;
+        if moov.mvhd.duration > (u32::MAX as u64) {
+            moov.mvhd.version = 1
+        }
+        moov.write_box(&mut self.writer)?;
+        Ok(())
+    }
+
     pub fn track_ids(&self) -> Vec<u32> {
         self.tracks.keys().cloned().collect()
     }
